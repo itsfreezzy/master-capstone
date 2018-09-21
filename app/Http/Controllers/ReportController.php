@@ -1,0 +1,304 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\UserLog;
+use App\User;
+use App\Reservation;
+use App\ReservationContact;
+use App\ReservationInfo;
+use App\Customer;
+use App\Payment;
+use App\Charts\SampleChart;
+use App\EventVenue;
+use App\EventNature;
+use Illuminate\Support\Facades\DB;
+use Validator;
+
+class ReportController extends Controller
+{
+    public function reservation()
+    {  
+        //###############################################################################################################
+        // Reservations Per Function Room
+        //###############################################################################################################
+        $resperfunchall = DB::table('tbleventvenue')
+                    ->join('tblreservations', 'tbleventvenue.reservationcode', '=', 'tblreservations.code')
+                    ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
+                    ->join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')
+                    ->select(DB::raw('COUNT(*) as reservationctr, tblfunctionhalls.name, tbleventvenue.venuecode'))
+                    ->groupBy('tbleventvenue.venuecode', 'tblfunctionhalls.name')
+                    ->orderBy('reservationctr', 'DESC')
+                    ->take(5)
+                    ->get();
+        $respermr = DB::table('tbleventvenue')
+                    ->join('tblreservations', 'tbleventvenue.reservationcode', '=', 'tblreservations.code')
+                    ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
+                    ->join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')
+                    ->select(DB::raw('COUNT(*) as reservationctr, tblmeetingrooms.name, tbleventvenue.venuecode'))
+                    ->groupBy('tbleventvenue.venuecode', 'tblmeetingrooms.name')
+                    ->orderBy('reservationctr', 'DESC')
+                    ->take(5)
+                    ->get();
+
+        $funcrooms = array();
+        $numofbookings = array();
+        $colors = array();
+
+        $resperfuncroomchart = new SampleChart;
+        $resperfuncroomchart->displayAxes(false);
+
+        foreach ($resperfunchall as $q) {
+            array_push($funcrooms, $q->name);
+            array_push($numofbookings, $q->reservationctr);
+            array_push($colors, $this->random_color());
+        }
+        foreach ($respermr as $q) {
+            array_push($funcrooms, $q->name);
+            array_push($numofbookings, $q->reservationctr);
+            array_push($colors, $this->random_color());
+        }
+        $resperfuncroomchart->labels($funcrooms);
+        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->color($this->random_color());
+
+
+        //###############################################################################################################
+        // Reservations Per Event Nature
+        //###############################################################################################################
+        $eventnatures = array();
+        $reseventnatureondb = ReservationInfo::take(5)->get();
+        foreach ($reseventnatureondb as $eventnature) {
+            foreach (explode(",", $eventnature->eventnature) as $events) {
+                $eventnatures[$events] = 0;
+            }
+        }
+
+        foreach ($eventnatures as $key => $value) {
+            foreach ($reseventnatureondb as $eventnature) {
+                foreach (explode(",", $eventnature->eventnature) as $events) {
+                    if ($key == $events) {
+                        $eventnatures[$key] += 1;
+                    }
+                }
+            }
+        }
+
+        $respereventnaturechart = new SampleChart;
+        foreach ($eventnatures as $key => $value) {
+            $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
+        }
+
+
+        //###############################################################################################################
+        // Reservations Per Status
+        //###############################################################################################################
+        $resstatondb = DB::table('tblreservations')
+                        ->select(DB::raw('status, count(*) as ctr'))
+                        ->groupBy('status')
+                        ->get();
+
+        $status = array();
+        $bookings = array();
+        
+        foreach ($resstatondb as $q) {
+            array_push($status, $q->status);
+            array_push($bookings, $q->ctr);   
+        }
+
+        $resperstatchart = new SampleChart;
+        $resperstatchart->displayAxes(false);
+        $resperstatchart->labels($status);
+        $resperstatchart->dataset('SAMPLE', 'pie', $bookings)->color($this->random_color());
+
+        $en = ReservationInfo::select('eventnature')->get();
+        $natures = [];
+        foreach ($en as $e) {
+            if (strpos($e, ',') !== false) {
+                foreach(explode(',', $e->eventnature) as $nature) {
+                    if (!in_array($nature, $natures)) {
+                        array_push($natures, $nature);
+                    }
+                }
+            } else {
+                if (!in_array($e->eventnature, $natures)) {
+                    array_push($natures, $e->eventnature);
+                }
+            }
+        }
+
+        $functionhalls = EventVenue::join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'FH%')->groupBy('name')->get();
+        $meetingrooms = EventVenue::join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'MR%')->groupBy('name')->get();
+
+        if($resperfuncroomchart->datasets[0]->values != NULL && $respereventnaturechart->datasets[0]->values != NULL && $resperstatchart->datasets[0]->values != NULL) {
+            return view('admin.reports-reservation')->with([
+                'resperfuncroomchart' => $resperfuncroomchart, 
+                'respereventnaturechart' => $respereventnaturechart,
+                'resperstatchart' => $resperstatchart,
+                'natures' => $natures,
+                'functionhalls' => $functionhalls,
+                'meetingrooms' => $meetingrooms,
+            ]);
+        } else {
+            return redirect()->back()->with(['error' => 'Insufficient data to access reports.']);
+        }
+    }
+
+    public function sales()
+    {
+        return view('admin.reports-sales');
+    }
+
+    public function updateReservationReport(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'daterange' => 'required',
+            'functionrooms' => 'required',
+            'natures' => 'required',
+            'status' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('admin.reports.reservation')->withErrors($validator)->withInput()->with(['error' => 'Please select a date range.']);
+        }
+
+        //###############################################################################################################
+        // Reservations Per Function Room
+        //###############################################################################################################
+        $resperfunchall = DB::table('tbleventvenue')
+                    ->join('tblreservations', 'tbleventvenue.reservationcode', '=', 'tblreservations.code')
+                    ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
+                    ->join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')
+                    ->select(DB::raw('COUNT(*) as reservationctr, tblfunctionhalls.name, tbleventvenue.venuecode'))
+                    ->groupBy('tbleventvenue.venuecode', 'tblfunctionhalls.name')
+                    ->orderBy('reservationctr', 'DESC')
+                    ->take(5)
+                    ->get();
+        $respermr = DB::table('tbleventvenue')
+                    ->join('tblreservations', 'tbleventvenue.reservationcode', '=', 'tblreservations.code')
+                    ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
+                    ->join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')
+                    ->select(DB::raw('COUNT(*) as reservationctr, tblmeetingrooms.name, tbleventvenue.venuecode'))
+                    ->groupBy('tbleventvenue.venuecode', 'tblmeetingrooms.name')
+                    ->orderBy('reservationctr', 'DESC')
+                    ->take(5)
+                    ->get();
+
+        $funcrooms = array();
+        $numofbookings = array();
+        $colors = array();
+
+        $resperfuncroomchart = new SampleChart;
+        $resperfuncroomchart->displayAxes(false);
+
+        foreach ($resperfunchall as $q) {
+            array_push($funcrooms, $q->name);
+            array_push($numofbookings, $q->reservationctr);
+            array_push($colors, $this->random_color());
+        }
+        foreach ($respermr as $q) {
+            array_push($funcrooms, $q->name);
+            array_push($numofbookings, $q->reservationctr);
+            array_push($colors, $this->random_color());
+        }
+        $resperfuncroomchart->labels($funcrooms);
+        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->color($this->random_color());
+
+
+        //###############################################################################################################
+        // Reservations Per Event Nature
+        //###############################################################################################################
+        $eventnatures = array();
+        $reseventnatureondb = ReservationInfo::take(5)->get();
+        foreach ($reseventnatureondb as $eventnature) {
+            foreach (explode(",", $eventnature->eventnature) as $events) {
+                $eventnatures[$events] = 0;
+            }
+        }
+
+        foreach ($eventnatures as $key => $value) {
+            foreach ($reseventnatureondb as $eventnature) {
+                foreach (explode(",", $eventnature->eventnature) as $events) {
+                    if ($key == $events) {
+                        $eventnatures[$key] += 1;
+                    }
+                }
+            }
+        }
+
+        $respereventnaturechart = new SampleChart;
+        foreach ($eventnatures as $key => $value) {
+            $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
+        }
+
+
+        //###############################################################################################################
+        // Reservations Per Status
+        //###############################################################################################################
+        $resstatondb = DB::table('tblreservations')
+                        ->select(DB::raw('status, count(*) as ctr'))
+                        ->groupBy('status')
+                        ->get();
+
+        $status = array();
+        $bookings = array();
+        
+        foreach ($resstatondb as $q) {
+            array_push($status, $q->status);
+            array_push($bookings, $q->ctr);   
+        }
+
+        $resperstatchart = new SampleChart;
+        $resperstatchart->displayAxes(false);
+        $resperstatchart->labels($status);
+        $resperstatchart->dataset('SAMPLE', 'pie', $bookings)->color($this->random_color());
+
+        $en = ReservationInfo::select('eventnature')->get();
+        $natures = [];
+        foreach ($en as $e) {
+            if (strpos($e, ',') !== false) {
+                foreach(explode(',', $e->eventnature) as $nature) {
+                    if (!in_array($nature, $natures)) {
+                        array_push($natures, $nature);
+                    }
+                }
+            } else {
+                if (!in_array($e->eventnature, $natures)) {
+                    array_push($natures, $e->eventnature);
+                }
+            }
+        }
+
+        $functionhalls = EventVenue::join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'FH%')->groupBy('name')->get();
+        $meetingrooms = EventVenue::join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'MR%')->groupBy('name')->get();
+
+        return view('admin.reports.reservation')->with([
+            'resperfuncroomchart' => $resperfuncroomchart, 
+            'respereventnaturechart' => $respereventnaturechart,
+            'resperstatchart' => $resperstatchart,
+            'natures' => $natures,
+            'functionhalls' => $functionhalls,
+            'meetingrooms' => $meetingrooms,
+        ]);
+    }
+
+    public function generateReservationReport(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'daterange' => 'required',
+            'functionrooms' => 'required',
+            'natures' => 'required',
+            'status' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('admin.reports.reservation')->withErrors($validator)->withInput()->with(['error' => 'Please select a date range.']);
+        }
+    }
+
+    function random_color_part() {
+        return str_pad( dechex( mt_rand( 0, 255 ) ), 2, '0', STR_PAD_LEFT);
+    }
+    
+    function random_color() {
+        return $this->random_color_part() . $this->random_color_part() . $this->random_color_part();
+    }
+}
