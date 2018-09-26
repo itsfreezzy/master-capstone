@@ -16,7 +16,7 @@
     @include('inc.messages')
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-xs-12 col-md-6">
             <div class="box box-primary">
                 <div class="box-header" style="color: white; background-color: #3c8dbc">
                     <h3 class="box-title"> Account Information/Profile </h3>
@@ -106,7 +106,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-xs-12 col-md-6">
             <div class="box box-primary">
                 <div class="box-header" style="color: white; background-color: #3c8dbc">
                     <h3 class="box-title"> Change Password </h3>

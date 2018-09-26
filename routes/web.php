@@ -100,6 +100,8 @@ Route::prefix('customer')->group(function() {
         Route::post('/profile', 'ClientController@updateProfile')->name('client.update.profile');
         Route::post('/password/update', 'ClientController@updatePassword')->name('client.update.password');
         Route::get('/settings', 'ClientController@goToSettingsPage')->name('client.settings');
+
+        Route::get('/test', 'ClientController@test')->name('client.test');
     });
 });
 
@@ -115,9 +117,9 @@ Route::prefix('customer')->group(function() {
 Route::prefix('admin')->group(function() {
     Route::get('/login', 'Auth\LoginController@showLoginForm')->name('admin.login');
     Route::post('/login', 'Auth\LoginController@login')->name('admin.login.submit');
-    Route::post('/logout', 'Auth\LoginController@logout')->name('admin.logout');
 
     Route::group(['middleware' => ['auth']], function() {
+        Route::post('/logout', 'Auth\LoginController@logout')->name('admin.logout');
         // DASHBOARD
         Route::get('/dashboard', 'AdminNavigationController@index')->name('admin.dashboard');
 
@@ -215,7 +217,14 @@ Route::prefix('admin')->group(function() {
 
         // Utilities
         Route::prefix('utilities')->group(function() {
-            Route::get('/users', 'AdminNavigationController@users')->name('admin.users');
+            // Users
+            Route::get('/users', 'AdminAccountController@index')->name('admin.users.index');
+            Route::post('/users', 'Auth\RegisterController@register')->name('admin.users.create');
+            Route::put('/users/{id}/edit', 'AdminAccountController@update')->name('admin.users.edit');
+            Route::delete('/users/{id}/destroy', 'AdminAccountController@destroy')->name('admin.users.destroy');
+            Route::patch('/users/{id}/restore', 'AdminAccountController@restore')->name('admin.users.restore');
+            Route::post('/users/get', 'AdminAccountController@getUserInfo')->name('admin.users.get'); //AJAX Route
+
             Route::get('/backupandrestore', 'AdminNavigationController@backupandrestore')->name('admin.backupandrestore');
             Route::get('/user-log', 'AdminNavigationController@userlog')->name('admin.userlog');
         });
@@ -228,8 +237,13 @@ Route::prefix('admin')->group(function() {
 
         // MISC
         Route::get('/profile', 'AdminNavigationController@goToProfilePage')->name('admin.show.profile');
+        Route::put('/profile/update', 'AdminAccountController@updateProfile')->name('admin.profile.update');
+        Route::put('/profile/password-update', 'AdminAccountController@updatePassword')->name('admin.password.update');
     });
 });
+
+// AJAX ROUTE????
+Route::post('/availability/get', 'WebNavigationController@getRoomsAvailability');
 
 // FOR TESTING OF PDF
 Route::get('/test', 'WebNavigationController@test');

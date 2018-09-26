@@ -11,6 +11,8 @@ Schedules - UNILAB Bayanihan Center
 <!-- fullCalendar -->
 <link rel="stylesheet" href="{{asset('adminlte/bower_components/fullcalendar/dist/fullcalendar.min.css')}}">
 <link rel="stylesheet" href="{{asset('adminlte/bower_components/fullcalendar/dist/fullcalendar.print.min.css')}}" media="print">
+<!-- Select2 -->
+<link rel="stylesheet" href="{{ asset('adminlte/bower_components/select2/dist/css/select2.min.css') }}" type="text/css">
 @endsection
 
 @section('content')
@@ -26,118 +28,137 @@ Schedules - UNILAB Bayanihan Center
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalShow">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close-btn"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-edit"></i> Edit</h4>
+            </div>
+
+            <form action="">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="">Selected Date:</label>
+                    <input type="hidden" name="date" id="seldate" name="seldate" class="form-control">
+                    <input type="text" name="date" id="dispdate" class="form-control" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="">Function Room Type:</label>
+                    <select name="funcroomtype" id="funcroomtype" class="form-control" aria-placeholder="test">
+                        <option value="">SELECT FUNCTION ROOM TYPE</option>
+                        <option value="FH">Function Hall</option>
+                        <option value="MR">Meeting Room</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="fhgroup">
+                    <label for="" >Function Hall(s):</label>
+                    <select name="funchall" id="funchall" class="form-control" aria-placeholder="test"style="width: 100%">
+                        {{-- <option value="">SELECT FUNCTION HALL</option> --}}
+                        <option value="FH">Function Hall</option>
+                        <option value="MR">Meeting Room</option>
+                    </select>
+                </div>
+                <div id="mrgroup">
+                    <div class="form-group">
+                        <label for="">Timeblock:</label>
+                        <select name="timeblock" id="timeblock" class="form-control" aria-placeholder="test" style="width: 100%">
+                            <option ></option>
+                            @foreach ($timeblocks as $timeblock)
+                            <option value="{{ $timeblock->code }}">{{ $timeblock->code }} | {{ date('h:i:s A', strtotime($timeblock->timestart)) }} - {{ date('h:i:s A', strtotime($timeblock->timeend)) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="">Meeting Room(s):</label>
+                        <select name="meetroom" id="meetroom" class="form-control" aria-placeholder="test" multiple style="width: 100%">
+                            {{-- <option value="">SELECT MEETING ROOM</option> --}}
+                            <option value="FH">Function Hall</option>
+                            <option value="MR">Meeting Room</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="glyphicon glyphicon-remove-sign"></i> Cancel</button>
+                <button type="button" class="btn btn-info" id="btncheckavailability"> <i class="fa fa-question"></i> Check Availability</button>
+                <button type="submit" class="btn btn-success" id="" data-loading-text="Loading..." autocomplete="off"> <i class="glyphicon glyphicon-ok-sign"></i> Submit</button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 
 
 @section('scripts')
 <!-- Page specific script -->
+<!-- Select2 -->
+<script src="{{ asset('adminlte/bower_components/select2/dist/js/select2.full.min.js') }}"></script>
+<script src="{{ asset('SmartWizard-master/dist/js/jquery.smartWizard.min.js') }}"></script>
 <script>
-    $(function () {
-    //     /* initialize the external events
-    //     -----------------------------------------------------------------*/
-    //     function init_events(ele) {
-    //     ele.each(function () {
+$(function () {
+    $('#fhgroup').hide();
+    $('#mrgroup').hide();
+    $('#timeblock').select2({
+        placeholder: 'Select desired timeblock...',
+    });
+    $('#funchall').select2({
+        placeholder: 'Select desired function halls...',
+    });
+    $('#meetroom').select2({
+        placeholder: 'Select desired meeting rooms...',
+    });
 
-    //         // create an Event Object (http://arshaw.com/fullcalendar/docs/event_data/Event_Object/)
-    //         // it doesn't need to have a start or end
-    //         var eventObject = {
-    //         title: $.trim($(this).text()) // use the element's text as the event title
-    //         }
+    $('#funcroomtype').on('change', function() {
+        if ($(this).val() == 'FH') {
+            $.ajax({
+                url: '/availability/get',
+                method: 'POST',
+                data: {
+                    _token: $('meta[name=csrf-token]').attr('content'),
+                    date: $('#seldate').val(),
+                    type: $(this).val(),
+                },
+                success: function(funchalls) {
+                    $('#funchall option').each(function() {
+                        if ($(this).val() == funchalls.venuecode) {
 
-    //         // store the Event Object in the DOM element so we can get to it later
-    //         $(this).data('eventObject', eventObject)
+                        }
+                    })
 
-    //         // make the event draggable using jQuery UI
-    //         $(this).draggable({
-    //         zIndex        : 1070,
-    //         revert        : true, // will cause the event to go back to its
-    //         revertDuration: 0  //  original position after the drag
-    //         })
+                    $('#mrgroup').hide();
+                    $('#fhgroup').show();
+                }
+            });
+        } else if ($(this).val() == 'MR') {
+            $.ajax({
+                url: '/availability/get',
+                method: 'POST',
+                data: {
+                    _token: $('meta[name=csrf-token]').attr('content'),
+                    date: $('#seldate').val(),
+                    type: $(this).val(),
+                },
+                success: function(meetrooms) {
+                    $('#fhgroup').hide();
+                    $('#mrgroup').show();
+                }
+            });
 
-    //     })
-    //     }
-
-    //     init_events($('#external-events div.external-event'))
-
-    //     /* initialize the calendar
-    //     -----------------------------------------------------------------*/
-    //     //Date for the calendar events (dummy data)
-    //     var date = new Date()
-    //     var d    = date.getDate(),
-    //         m    = date.getMonth(),
-    //         y    = date.getFullYear()
-    //     $('#calendar').fullCalendar({
-    //     header    : {
-    //         left  : 'prev,next today',
-    //         center: 'title',
-    //         right : 'month,agendaWeek,agendaDay'
-    //     },
-    //     buttonText: {
-    //         today: 'today',
-    //         month: 'month',
-    //         week : 'week',
-    //         day  : 'day'
-    //     },
-    //     //Random default events
-    //     events    : [
-    //         {
-    //         title          : 'All Day Event',
-    //         start          : new Date(y, m, 1),
-    //         backgroundColor: '#f56954', //red
-    //         borderColor    : '#f56954' //red
-    //         },
-    //         {
-    //         title          : 'Long Event',
-    //         start          : new Date(y, m, d - 5),
-    //         backgroundColor: '#f39c12', //yellow
-    //         borderColor    : '#f39c12' //yellow
-    //         },
-    //         {
-    //         title          : 'Meeting',
-    //         start          : new Date(y, m, d),
-    //         allDay         : false,
-    //         backgroundColor: '#0073b7', //Blue
-    //         borderColor    : '#0073b7' //Blue
-    //         },
-    //         {
-    //         title          : 'Lunch',
-    //         start          : new Date(y, m, d, 12, 0),
-    //         end            : new Date(y, m, d, 14, 0),
-    //         allDay         : false,
-    //         backgroundColor: '#00c0ef', //Info (aqua)
-    //         borderColor    : '#00c0ef' //Info (aqua)
-    //         },
-    //         {
-    //         title          : 'Birthday Party',
-    //         start          : new Date(y, m, d + 1, 19, 0),
-    //         end            : new Date(y, m, d + 1, 22, 30),
-    //         allDay         : false,
-    //         backgroundColor: '#00a65a', //Success (green)
-    //         borderColor    : '#00a65a' //Success (green)
-    //         },
-    //         {
-    //         title          : 'Click for Google',
-    //         start          : new Date(y, m, 28),
-    //         end            : new Date(y, m, 29),
-    //         url            : 'http://google.com/',
-    //         backgroundColor: '#3c8dbc', //Primary (light-blue)
-    //         borderColor    : '#3c8dbc' //Primary (light-blue)
-    //         }
-    //     ],
-    //     })
-    // })
-
-    // $('#calendar').fullCalendar({
-    // selectable: true,
-    // dayClick: function(date, allDay, jsEvent, view) {
-
-    //     if (allDay) {
-    //         alert(date.format());
-            
-    //     }
-    // }
+            $('#fhgroup').hide();
+            $('#mrgroup').show();
+        } else {
+            $('#fhgroup').hide();
+            $('#mrgroup').hide();
+        }
+    });
 });
 </script>
-
 @endsection

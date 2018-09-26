@@ -19,9 +19,10 @@ class CreatePaymentsTable extends Migration
             $table->string('reservationcode', 20);
             $table->string('paymenttype', 75);
             $table->datetime('paymentdate');
-            $table->decimal('amount', 7, 2);
+            $table->decimal('amount', 9, 2);
             $table->string('status', 30);
-            $table->string('proof', 100);
+            $table->string('proof', 1000);
+            $table->string('proofdir', 1000)->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

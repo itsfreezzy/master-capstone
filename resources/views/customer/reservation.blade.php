@@ -6,7 +6,9 @@ NEW RESERVATION | USER - UNILAB Bayanihan Center
 
 @section('styles')
 <!-- Select2 -->
-<link rel="stylesheet" href="{{asset('adminlte/bower_components/select2/dist/css/select2.min.css')}}">
+<link rel="stylesheet" href="{{ asset('adminlte/bower_components/select2/dist/css/select2.min.css') }}" type="text/css">
+<link rel="stylesheet" href="{{ asset('SmartWizard-master/dist/css/smart_wizard.css') }}" type="text/css">
+<link rel="stylesheet" href="{{ asset('SmartWizard-master/dist/css/smart_wizard_theme_arrows.css') }}" type="text/css">
 @endsection
 
 @section('content-header')
@@ -142,10 +144,26 @@ NEW RESERVATION | USER - UNILAB Bayanihan Center
 
 @section('scripts')
 <!-- Select2 -->
-<script src="{{asset('adminlte/bower_components/select2/dist/js/select2.full.min.js')}}"></script>
+<script src="{{ asset('adminlte/bower_components/select2/dist/js/select2.full.min.js') }}"></script>
+<script src="{{ asset('SmartWizard-master/dist/js/jquery.smartWizard.min.js') }}"></script>
 
 <script>
 $(function() {
+    $('#smartwizard').smartWizard({
+        selected: 0,
+        theme: 'arrows',
+    });
+    $("#prev-btn").on("click", function() {
+        // Navigate previous
+        $('#smartwizard').smartWizard("prev");
+        return true;
+    });
+
+    $("#next-btn").on("click", function() {
+        // Navigate next
+        $('#smartwizard').smartWizard("next");
+        return true;
+    });
     $('[data-toggle="tooltip"]').tooltip();
     //##################################################################
     // For Applying Select2 on Select Boxes
@@ -441,7 +459,11 @@ function computePrice (equipment_id, src) {
                 total = qtyequipment * equipmentrate;
 
                 if (diff > 10.0) {
-                    total += (diff - 10) * val.hourlyexcessrate;
+                    if (val.wholedayrate == val.halfdayrate && val.halfdayrate == val.hourlyexcessrate) {
+                        return false;
+                    } else {
+                        total += (diff - 10) * val.hourlyexcessrate;
+                    }
                 }
             }
 

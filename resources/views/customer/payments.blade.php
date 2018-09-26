@@ -40,6 +40,7 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                         <thead>
                             <th class="col-sm-1">Payment Code</th>
                             <th>Event Title</th>
+                            <th>Reservation Status</th>
                             <th>Payment Type</th>
                             <th>Payment Date</th>
                             <th>Payment Status</th>
@@ -52,6 +53,17 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                                     <tr>
                                         <td>{{$payment->paymentcode}}</td>
                                         <td>{{$reservation->eventtitle}}</td>
+                                        <td>
+                                            @if ($reservation->status == "Pending")
+                                            <span class="label label-default">{{ $reservation->status }}</span>
+                                            @elseif ($reservation->status == "Confirmed")
+                                            <span class="label label-primary">{{ $reservation->status }}</span>
+                                            @elseif ($reservation->status == "Done")
+                                            <span class="label label-success">{{ $reservation->status }}</span>
+                                            @elseif ($reservation->status == "Cancelled")
+                                            <span class="label label-danger">{{ $reservation->status }}</span>
+                                            @endif
+                                        </td>
                                         <td>{{$payment->paymenttype}}</td>
                                         <td>{{date('F d, Y', strtotime($payment->paymentdate))}}</td>
                                         <td>
@@ -137,7 +149,7 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                     <div class="form-group">
                         <label for="" class="col-sm-4 control-label">Payment Date:</label>
                         <div class="col-sm-7">
-                            <input name="paymentdate" type="date" class="form-control" name="paymenttype" value="" autocomplete="off">
+                            <input name="paymentdate" type="date" class="form-control" id="paymentdate" value="" autocomplete="off">
                         </div>
                     </div>
 
@@ -145,7 +157,7 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                     <div class="form-group">
                         <label for="" class="col-sm-4 control-label">Proof of Payment:</label>
                         <div class="col-sm-7">
-                            <input class="form-control" type="file" name="paymentproof[]" id="" multiple>
+                            <input class="form-control" type="file" name="paymentproof[]" id="paymentproof" multiple>
                         </div>
                     </div>
                     
@@ -214,7 +226,7 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                         <div class="col-sm-7">
                             @foreach (explode("|", $payment->proof) as $proof)
                                 @if ($proof != '' || $proof != null)
-                                    <a href="/storage/{{Auth::guard('customer')->user()->code}}/{{$proof}}" target="_blank"><img src="/storage/{{Auth::guard('customer')->user()->code}}/{{$proof}}" width="100%"></a> <br><br>
+                                    <a href="{{$proof}}" target="_blank"><img src="{{$proof}}" width="100%"></a> <br><br>
                                 @endif
                             @endforeach
                         </div>
@@ -312,6 +324,13 @@ $(function() {
     var $reservations = @json($reservations);
     var $payments = @json($payments);
 
+    
+    selpaymenttype.val('');
+    selpaymenttype.attr('disabled', true);
+    $('#pmtamt').attr('disabled', true);
+    $('#paymentdate').attr('disabled', true);
+    $('#paymentproof').attr('disabled', true);
+
     //##################################################################
     // On change of reservation list selectbox
     //##################################################################
@@ -327,19 +346,16 @@ $(function() {
                         if (selpaymenttype.val() == 'Security Deposit') {
                             $('#pmtamt').attr('max', 10000);
                             $('#pmtamt').attr('min', 10000);
-                            console.log('sd');
                         } else if (selpaymenttype.val() == 'Reservation Fee') {
                             $('#pmtamt').attr('max', 5000);
                             $('#pmtamt').attr('min', 5000);
-                            console.log('rf');
                         }
-                        $('#pmtamt').attr('min', value.balance);
+                        $('#pmtamt').attr('min', 1);
                         $('#pmtamt').attr('max', value.balance);
                         return false;
                     }
                 });
 
-                console.log($('#pmtamt').attr('max'));
                 return false;
             }
         });
@@ -348,18 +364,26 @@ $(function() {
             $($payments).each(function(index, payment) {
                 if (payment.reservationcode == selectedreservation) {
                     paymentoptions.each(function() {
-                        if (payment.paymenttype == $(this).val()) {
+                        if (payment.paymenttype == $(this).val() || $(this).val() == '' || $(this).val() == null) {
                             $(this).prop('disabled', true);
-                            // return false;
+                        } else {
+                            $(this).prop('disabled', false);
+                        }
+                    });
+                    
+                    paymentoptions.each(function() {
+                        if (!$(this).attr('disabled')) {
+                            selpaymenttype.val($(this).val());
+                            return false;
                         }
                     });
                 }
-                // paymentoptions.each(function () {
-                //     if (payment.reservationcode == selectedreservation && payment.paymenttype == $(this).val()) {
-                //         $(this).prop('disabled', true);
-                //     }
-                // });
             });
+            
+            selpaymenttype.attr('disabled', false);
+            $('#pmtamt').attr('disabled', false);
+            $('#paymentdate').attr('disabled', false);
+            $('#paymentproof').attr('disabled', false);
         } else {
             if (selectedreservation == null || selectedreservation == '') {
                 paymentoptions.each(function () {
@@ -369,14 +393,26 @@ $(function() {
                         $(this).prop('disabled', false);
                     }
                 });
+
+                selpaymenttype.val('');
+                selpaymenttype.attr('disabled', true);
+                $('#pmtamt').attr('disabled', true);
+                $('#paymentdate').attr('disabled', true);
+                $('#paymentproof').attr('disabled', true);
             } else {
-                paymentoptions.each(function () {
+                paymentoptions.each(function() {
                     if($(this).val() != 'Reservation Fee') {
                         $(this).prop('disabled', true);
                     } else {
                         $(this).prop('disabled', false);
+                        selpaymenttype.val($(this).val());
                     }
                 });
+                
+                selpaymenttype.attr('disabled', false);
+                $('#pmtamt').attr('disabled', false);
+                $('#paymentdate').attr('disabled', false);
+                $('#paymentproof').attr('disabled', false);
             }
         }
     });

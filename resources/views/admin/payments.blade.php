@@ -138,7 +138,7 @@ Bayanihan Center | Payments
                         <div class="col-sm-7">
                             @foreach (explode("|", $payment->proof) as $proof)
                                 @if ($proof != '' || $proof != null)
-                                    <a href="/storage/{{$customer->code}}/{{$proof}}" target="_blank"><img src="/storage/{{$customer->code}}/{{$proof}}" width="100%"></a> <br><br>
+                                    <a href="{{$proof}}" target="_blank"><img src="{{$proof}}" width="100%"></a> <br><br>
                                 @endif
                             @endforeach
                         </div>

@@ -8,23 +8,8 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use App\EventNature;
-use App\EventSetup;
-use App\EventVenue, App\EventEquipment;
-use App\Amenity;
-use App\Equipment;
-use App\FunctionHall;
-use App\MeetingRoom;
-use App\Caterer;
-use App\CatEmail;
-use App\CatContact;
-use App\CatContactPerson;
-use App\Timeblock;
-use App\Reservation;
-use App\ReservationContact;
-use App\ReservationInfo;
-use App\Payment;
-use App\Customer;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use App\EventNature, App\EventSetup, App\EventVenue, App\EventEquipment, App\Amenity, App\Equipment, App\FunctionHall, App\MeetingRoom, App\Caterer, App\CatEmail, App\CatContact, App\CatContactPerson, App\Timeblock, App\Reservation, App\ReservationContact, App\ReservationInfo, App\Payment, App\Customer;
 use Validator;
 use PDF;
 use App\Mail\NewPayment;
@@ -86,7 +71,7 @@ class ClientController extends Controller
     }
     
     public function goToPaymentsPage() {
-        $payments = Payment::all();
+        $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->where('tblreservations.customercode', Auth::guard('customer')->user()->code)->get();
         $customers = Customer::withTrashed()->get();
         $reservations = Reservation::where('customercode', Auth::guard('customer')->user()->code)->withTrashed()->get();
 
@@ -411,6 +396,7 @@ class ClientController extends Controller
         }
         
         $files = '';
+        $links = '';
         // Handle File Upload
         if($request->hasFile('paymentproof')) {
             foreach ($request->paymentproof as $proof) {
@@ -422,9 +408,13 @@ class ClientController extends Controller
                 $extension = $proof->clientExtension();
                 // New file name to store to DB
                 $fileNameToStore = $filename.'_'.time().'.'.$extension;
-                $files .= $fileNameToStore . '|';
-                // Upload the image
-                $path = $proof->storeAs($this->destinationPath(), $fileNameToStore);
+                // // Upload the image
+                // // $path = $proof->storeAs($this->destinationPath(), $fileNameToStore);
+                $s3 = \Storage::disk('s3');
+                $filePath = $this->destinationPath() . '/' . $fileNameToStore;
+                $s3->put($filePath, file_get_contents($proof, 'public'));
+                $files .= $s3->url($filePath, file_get_contents($proof, 'public')) . '|';
+                $links .= $filePath . '|';
             }
         }
         
@@ -435,6 +425,7 @@ class ClientController extends Controller
         $payment->amount = $request->paymentamount;
         $payment->status = 'Pending';
         $payment->proof = $files;
+        $payment->proofdir = $links;
         $payment->save();
         $payment->paymentcode = sprintf('PMT-%05d', $payment->id);
         $payment->save();
@@ -479,13 +470,14 @@ class ClientController extends Controller
         $payment->amount = $request->editpaymentamount;
         $payment->status = 'Pending';
         
-        foreach (explode("|", $payment->proof) as $proof) {
-            if ($proof != '' || $proof != null) {
-                Storage::delete($this->destinationPath() . '/' . $proof);
+        foreach (explode("|", $payment->proofdir) as $dir) {
+            if ($dir != '' || $dir != null) {
+                Storage::disk('s3')->delete($dir);
             }
         }
 
         $files = '';
+        $links = '';
         // Handle File Upload
         if($request->hasFile('editpaymentproof')) {
             foreach ($request->editpaymentproof as $proof) {
@@ -497,9 +489,13 @@ class ClientController extends Controller
                 $extension = $proof->clientExtension();
                 // New file name to store to DB
                 $fileNameToStore = $filename.'_'.time().'.'.$extension;
-                $files .= $fileNameToStore . '|';
                 // Upload the image
-                $path = $proof->storeAs($this->destinationPath(), $fileNameToStore);
+                // $path = $proof->storeAs($this->destinationPath(), $fileNameToStore);
+                $s3 = \Storage::disk('s3');
+                $filePath = $this->destinationPath() . '/' . $fileNameToStore;
+                $s3->put($filePath, file_get_contents($proof, 'public'));
+                $files .= $s3->url($filePath, file_get_contents($proof, 'public')) . '|';
+                $links .= $filePath . '|';
             }
         } else {
             $payment->save();
@@ -508,6 +504,7 @@ class ClientController extends Controller
         }
         
         $payment->proof = $files;
+        $payment->proofdir = $links;
         $payment->save();
 
         $users = User::all();
@@ -979,7 +976,7 @@ class ClientController extends Controller
         }
 
         $customer = Customer::find(Auth::guard('customer')->user()->id);
-        $customer->password = Hash::make($request->password);
+        $customer->password = Hash::make($request->newpassword);
         if ($customer->isDirty()) {
             $customer->save();
             
@@ -991,7 +988,7 @@ class ClientController extends Controller
     
     public function destinationPath()
     {
-        return '/public/' . Auth::guard('customer')->user()->code;
+        return 'public/' . Auth::guard('customer')->user()->code;
     }
 
     public function getReservationContacts($reservationcontacts) 
@@ -1054,5 +1051,23 @@ class ClientController extends Controller
         return [
             '' => '',
         ];
+    }
+
+    public function test() {
+        $meetingrooms = MeetingRoom::all();
+        $functionhalls = FunctionHall::all();
+        $equipments = Equipment::all();
+        $eventnatures = EventNature::all();
+        $eventsetups = EventSetup::all();
+        $caterers = Caterer::all();
+
+        return view('customer.test')->with([
+            'meetingrooms' => $meetingrooms,
+            'functionhalls' => $functionhalls,
+            'equipments' => $equipments,
+            'eventnatures' => $eventnatures,
+            'eventsetups' => $eventsetups,
+            'caterers' => $caterers,
+        ]);
     }
 }

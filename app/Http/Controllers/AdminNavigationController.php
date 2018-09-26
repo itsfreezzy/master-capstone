@@ -95,12 +95,6 @@ class AdminNavigationController extends Controller
         ]);
     }
 
-
-    public function users()
-    {
-        return view('admin.users');
-    }
-
     public function goToProfilePage() 
     {
         return view('admin.profile');

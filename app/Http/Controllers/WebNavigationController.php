@@ -79,6 +79,7 @@ class WebNavigationController extends Controller
         $reservationinfos = ReservationInfo::all();
         $customers = Customer::all();
         $pendingreservations = Reservation::where('status', 'Pending')->count();
+        $timeblocks = Timeblock::all();
 
         $events = [];
         foreach ($reservations as $reservation) {
@@ -98,7 +99,17 @@ class WebNavigationController extends Controller
             }
         }
 
-        $calendar = \Calendar::addEvents($events);
+        $calendar = \Calendar::addEvents($events)
+                ->setCallbacks([
+                    'dayClick' => 'function(date, jsEvent, view) {
+                        var date = new Date(date);
+                        var options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+
+                        $("#seldate").val(date.toLocaleDateString("en-US"));
+                        $("#dispdate").val(date.toLocaleDateString("en-US", options));
+                        $("#modalShow").modal("show");
+                    }'
+                ]);
 
         return view('website.schedules')->with([
             'reservations' => $reservations,
@@ -108,6 +119,7 @@ class WebNavigationController extends Controller
             'calendar' => $calendar,
             'pendingreservations' => $pendingreservations,
             'monthreservations' => $this->thisMonthReservations(),
+            'timeblocks' => $timeblocks,
         ]);
     }
 
@@ -269,5 +281,24 @@ class WebNavigationController extends Controller
         $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
         $payment = Payment::where('reservationcode', $reservation->code)->where('status', '!=', 'Rejected')->orderBy('created_at', 'DESC')->firstOrFail();
         return (new PaymentVerified($customer, $reservation, $payment))->render();
+    }
+
+
+    public function getRoomsAvailability(Request $request) {
+        if ($request->type == 'FH') {
+            $date = date('Y-m-d', strtotime($request->date));
+            $reservedfunchalls = DB::table('tbleventvenue')
+                                ->join('tblreservations', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
+                                ->where('tblreservations.status', 'like', 'Confirmed')
+                                ->where('tblreservations.eventdate', $date)
+                                ->where('tbleventvenue.venuecode', 'like', 'FH%')
+                                ->get();
+
+            return $reservedfunchalls;
+        } else if ($request->type == 'MR') {
+            return 'meeting room';
+        } else {
+            return 'error';
+        }
     }
 }

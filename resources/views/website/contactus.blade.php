@@ -16,7 +16,7 @@
 		<h2>Follow us on...</h2>
 
 		<div class="col-md-2">
-			<a href="https://www.facebook.com/Unilab"><img class="img-responsive wow pulse" src="{{asset('img/fb.png')}}" alt="" style="width: 95px; height: 95px; animation-iteration-count: infinite;"></a>
+			<a href="https://www.facebook.com/pg/8008BayanihanCenter/"><img class="img-responsive wow pulse" src="{{asset('img/fb.png')}}" alt="" style="width: 95px; height: 95px; animation-iteration-count: infinite;"></a>
 		</div>
 
 		<div class="col-md-2">

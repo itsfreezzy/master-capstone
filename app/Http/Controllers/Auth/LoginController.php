@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 
@@ -37,7 +37,7 @@ class LoginController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('guest')->except('logout');
+        $this->middleware('guest:web', ['except' => ['logout']]);
     }
 
     public function username()
@@ -48,11 +48,16 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         Auth::guard('web')->logout();
+        return redirect()->route('admin.login');
+    }
 
-        // $request->session()->flush(); // this method should be called after we ensure that there is no logged in guards left
+    public function showLoginForm()
+    {
+        return view('auth.login');
+    }
 
-        // $request->session()->regenerate(); //same 
-
-        return redirect()->guest('admin/login');
+    public function authenticated($request,$user)
+    {
+        return redirect(session()->pull('from', $this->redirectTo));
     }
 }
