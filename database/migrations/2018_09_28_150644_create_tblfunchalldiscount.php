@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateFunctionHallsTable extends Migration
+class CreateTblfunchalldiscount extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,9 @@ class CreateFunctionHallsTable extends Migration
      */
     public function up()
     {
-        Schema::create('tblfunctionhalls', function (Blueprint $table) {
+        Schema::create('tblfunchallsdiscount', function (Blueprint $table) {
             $table->increments('id');
             $table->string('code', 50)->unique()->nullable();
-            $table->string('name', 75)->unique();
             $table->decimal('floorarea', 6, 2);
             $table->integer('mincapacity');
             $table->integer('maxcapacity');
@@ -36,6 +35,6 @@ class CreateFunctionHallsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('tblfunctionhalls');
+        Schema::dropIfExists('tblfunchallsdiscount');
     }
 }

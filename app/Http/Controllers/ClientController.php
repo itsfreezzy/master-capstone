@@ -193,58 +193,111 @@ class ClientController extends Controller
                             ->where('reservationcode', $reservation->code)
                             ->get();
 
-            if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->wholedayrate;
-                }
+            $price = array();
+            foreach ($eventvenues as $ev) {
+                array_push($price, $ev->venuecode);
+            }
+            $price = implode("|", $price);
+            $discountedPrice = DB::table('tblfunchallsdiscount')->where('code', $price)->firstOrFail();
 
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->hourlyexcessrate * (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h - 10);
+            if ($discountedPrice) {
+                if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
+                    $eventgrandtotal += $discountedPrice->wholedayrate;
+                    $eventgrandtotal += $discountedPrice->hourlyexcessrate * (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h - 10);
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
+                    $eventgrandtotal += $discountedPrice->wholedayrate;
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 1) {
+                    $eventgrandtotal += $discountedPrice->halfdayrate;
                 }
-            } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->wholedayrate;
-                }
-            } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 1) {
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->halfdayrate;
+            } else {
+                if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->wholedayrate;
+                    }
+
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->hourlyexcessrate * (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h - 10);
+                    }
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->wholedayrate;
+                    }
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 1) {
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->halfdayrate;
+                    }
                 }
             }
+
+            
         } elseif ($prefix[0] == 'MR') {
             $eventvenues = EventVenue::join('tblmeetingrooms', 'tbleventvenue.venuecode', '=', 'tblmeetingrooms.code')
                             ->where('reservationcode', $reservation->code)
                             ->get();
-            
-            foreach ($eventvenues as $eventvenue) {
-                $eventgrandtotal += $eventvenue->rateperblock;
+
+            $price = array();
+            foreach ($eventvenues as $ev) {
+                array_push($price, $ev->venuecode);
             }
+            $price = implode("|", $price);
+            $discountedPrice = DB::table('tblmeetroomdiscount')->where('code', $price)->firstOrFail();
+
+            if ($discountedPrice) {
+                $eventgrandtotal += $discountedPrice->rateperblock;
+            } else {
+                foreach ($eventvenues as $eventvenue) {
+                    $eventgrandtotal += $eventvenue->rateperblock;
+                }
+            }
+            
+            
         } else {
             return dd("ERROR");
         }
 
-        foreach ($eventvenues as $eventvenue) {
+        if ($discountedPrice) {
             if (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i < 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->ingress))->h == 0) {
 
             }
             elseif (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i >= 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h == 0) {
-                $eventgrandtotal += $eventvenue->ineghourlyrate;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate;
             } else {
-                $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate * date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h;
             }
-        }
 
-        foreach ($eventvenues as $eventvenue) {
             if (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i < 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
 
             }
             elseif (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i >= 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
-                $eventgrandtotal += $eventvenue->ineghourlyrate;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate;
             } else {
-                $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate * date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h;
+            }
+        } else {
+            foreach ($eventvenues as $eventvenue) {
+                if (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i < 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->ingress))->h == 0) {
+
+                }
+                elseif (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i >= 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h == 0) {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate;
+                } else {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h;
+                }
+            }
+
+            foreach ($eventvenues as $eventvenue) {
+                if (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i < 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
+
+                }
+                elseif (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i >= 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate;
+                } else {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h;
+                }
             }
         }
 
-        session(['eventtotal' => $eventgrandtotal, 'equiptotal' => $equipgrandtotal]);
+        // session(['eventtotal' => $eventgrandtotal, 'equiptotal' => $equipgrandtotal]);
 
         $reservation->total = ($eventgrandtotal + $equipgrandtotal + 15000) * 1.12;
         $reservation->balance = ($eventgrandtotal + $equipgrandtotal + 15000) * 1.12;

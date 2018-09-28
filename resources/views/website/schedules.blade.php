@@ -55,15 +55,20 @@ Schedules - UNILAB Bayanihan Center
                 </div>
 
                 <div class="form-group" id="fhgroup">
-                    <label for="" >Function Hall(s):</label>
-                    <select name="funchall" id="funchall" class="form-control" aria-placeholder="test"style="width: 100%">
-                        {{-- <option value="">SELECT FUNCTION HALL</option> --}}
+                    <label for="" >Available Function Hall(s):</label>
+                    <ul id="funchalllist">
+                        @foreach ($funchalls as $fhall)
+                        <li data-id="{{ $fhall->code }}">{{ $fhall->name }}</li>
+                        @endforeach
+                    </ul>
+                    {{-- <select name="funchall" id="funchall" class="form-control" aria-placeholder="test"style="width: 100%">
+                        <option value="">SELECT FUNCTION HALL</option>
                         <option value="FH">Function Hall</option>
                         <option value="MR">Meeting Room</option>
-                    </select>
+                    </select> --}}
                 </div>
                 <div id="mrgroup">
-                    <div class="form-group">
+                    <div class="form-group" id="mrtimeblock">
                         <label for="">Timeblock:</label>
                         <select name="timeblock" id="timeblock" class="form-control" aria-placeholder="test" style="width: 100%">
                             <option ></option>
@@ -73,13 +78,18 @@ Schedules - UNILAB Bayanihan Center
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="">Meeting Room(s):</label>
-                        <select name="meetroom" id="meetroom" class="form-control" aria-placeholder="test" multiple style="width: 100%">
-                            {{-- <option value="">SELECT MEETING ROOM</option> --}}
+                    <div class="form-group" id="meetingroom">
+                        <label for="">Available Meeting Room(s):</label>
+                        <ul id="meetroomlist">
+                            @foreach ($meetrooms as $mroom)
+                            <li data-id="{{ $mroom->code }}" data-tbcode="{{ $mroom->timeblockcode }}">{{ $mroom->name }}</li>
+                            @endforeach
+                        </ul>
+                        {{-- <select name="meetroom" id="meetroom" class="form-control" aria-placeholder="test" multiple style="width: 100%">
+                            <option value="">SELECT MEETING ROOM</option>
                             <option value="FH">Function Hall</option>
                             <option value="MR">Meeting Room</option>
-                        </select>
+                        </select> --}}
                     </div>
                 </div>
             </div>
@@ -104,8 +114,9 @@ Schedules - UNILAB Bayanihan Center
 <script src="{{ asset('SmartWizard-master/dist/js/jquery.smartWizard.min.js') }}"></script>
 <script>
 $(function () {
-    $('#fhgroup').hide();
     $('#mrgroup').hide();
+    $('#meetingroom').hide();
+    $('#fhgroup').hide();
     $('#timeblock').select2({
         placeholder: 'Select desired timeblock...',
     });
@@ -127,14 +138,24 @@ $(function () {
                     type: $(this).val(),
                 },
                 success: function(funchalls) {
-                    $('#funchall option').each(function() {
-                        if ($(this).val() == funchalls.venuecode) {
-
-                        }
-                    })
-
                     $('#mrgroup').hide();
                     $('#fhgroup').show();
+
+                    $('#funchalllist li').each(function() {
+                        var id = $(this).data('id');
+                        var elem = $(this);
+
+                        if (elem.parent().get(0).tagName == 'STRIKE') {
+                            elem.unwrap();
+                        }
+
+                        $.each(funchalls, function(index, fhall){
+                            if (id == fhall.venuecode) {
+                                elem.wrap('<strike>');
+                                return false;
+                            }
+                        });
+                    });
                 }
             });
         } else if ($(this).val() == 'MR') {
@@ -149,15 +170,28 @@ $(function () {
                 success: function(meetrooms) {
                     $('#fhgroup').hide();
                     $('#mrgroup').show();
+
+                    $('#mrtimeblock').on('change', function() {
+                        if ($(this).val() != '' || $(this).val() != null) {
+                            $('#meetingroom').show();
+                        } else {
+                            $('#meetingroom').hide();
+                        }
+                    });
                 }
             });
-
-            $('#fhgroup').hide();
-            $('#mrgroup').show();
         } else {
             $('#fhgroup').hide();
             $('#mrgroup').hide();
         }
+    });
+
+    $('#modalShow').on('hidden.bs.modal', function(e){
+        $('#mrgroup').hide();
+        $('#fhgroup').hide();
+        $('#funcroomtype').val('');
+        $("select").val('').change();
+        $('#meetingroom').hide();
     });
 });
 </script>

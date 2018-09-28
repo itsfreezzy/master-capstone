@@ -74,29 +74,27 @@ class WebNavigationController extends Controller
 
     public function goToSchedules()
     {
-        $reservations = Reservation::where('status', '!=', 'Pending')->where('status', '!=', 'Done')->get();
+        $reservations = Reservation::join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->where('status', '=', 'Confirmed')->get();
         $reservationcontacts = ReservationContact::all();
         $reservationinfos = ReservationInfo::all();
         $customers = Customer::all();
         $pendingreservations = Reservation::where('status', 'Pending')->count();
         $timeblocks = Timeblock::all();
+        $funchalls = FunctionHall::all();
+        $meetrooms = MeetingRoom::all();
 
         $events = [];
         foreach ($reservations as $reservation) {
-            foreach ($reservationinfos as $reservationinfo){
-                if ($reservation->reservationinfoid == $reservationinfo->id) {
-                    $events[] = \Calendar::event(
-                        $reservation->eventtitle,
-                        false,
-                        $reservation->eventdate . ' ' . $reservationinfo->timestart,
-                        $reservation->eventdate . ' ' . $reservationinfo->timeend,
-                        $reservation->id,
-                        [
-                            // 'url' => '/admin/reservations'
-                        ]
-                    );
-                }
-            }
+            $events[] = \Calendar::event(
+                $reservation->eventtitle,
+                false,
+                $reservation->eventdate . ' ' . $reservation->timestart,
+                $reservation->eventdate . ' ' . $reservation->timeend,
+                $reservation->id,
+                [
+                    // 'url' => '/admin/reservations'
+                ]
+            );
         }
 
         $calendar = \Calendar::addEvents($events)
@@ -120,6 +118,8 @@ class WebNavigationController extends Controller
             'pendingreservations' => $pendingreservations,
             'monthreservations' => $this->thisMonthReservations(),
             'timeblocks' => $timeblocks,
+            'meetrooms' => $meetrooms,
+            'funchalls' => $funchalls,
         ]);
     }
 
