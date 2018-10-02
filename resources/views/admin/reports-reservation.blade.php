@@ -35,25 +35,16 @@ Bayanihan Center | Reports
 			<div class="box-body">
 				{{-- LABELS --}}
 				<div class="row">
-					<div class="col-md-3">
+					<div class="col-xs-offset-3 col-xs-6">
 						<label for="">Reservation Date Range:</label>
-					</div>
-					<div class="col-md-3">
-						<label for="">Function Room:</label>
-					</div>
-					<div class="col-md-3">
-						<label for="">Event Nature:</label>
-					</div>
-					<div class="col-md-3">
-						<label for="">Status:</label>
 					</div>
 				</div>
 
 				{{-- SELECT BOXES --}}
-				<div class="row">
+				<div class="row" >
 					<form action="" id="selectionform" method="POST">
 						@csrf
-						<div class="col-md-3">
+						<div class="col-xs-offset-3 col-xs-6">
 							<div class="form-group">
 								<button type="button" class="btn btn-default col-xs-12" id="daterange-btn">
 										<span>
@@ -64,45 +55,11 @@ Bayanihan Center | Reports
 								<input type="text" id="inputrange" name="daterange" required style="display: none">
 							</div>
 						</div>
-						<div class="col-md-3">
-							<div class="form-group">
-								<select name="functionrooms" id="" class="form-control">
-									<option value="All">All</option>
-									@foreach($functionhalls as $fh)
-									<option value="{{ $fh->name }}">{{ $fh->name }}</option>
-									@endforeach
-									@foreach ($meetingrooms as $mr)
-									<option value="{{ $mr->name }}">{{ $mr->name }}</option>
-									@endforeach
-								</select>
-							</div>
-						</div>
-						<div class="col-md-3">
-							<div class="form-group">
-								<select name="natures" id="" class="form-control">
-									<option value="All">All</option>
-									@foreach ($natures as $nature)
-									<option value="{{$nature}}">{{$nature}}</option>
-									@endforeach
-								</select>
-							</div>
-						</div>
-						<div class="col-md-3">
-							<div class="form-group">
-								<select name="status" id="" class="form-control">
-									<option value="All">All</option>
-									<option value="Pending">Pending</option>
-									<option value="Confirmed">Confirmed</option>
-									<option value="Done">Done</option>
-									<option value="Cancelled">Cancelled</option>
-								</select>
-							</div>
-						</div>
 					</form>
 				</div>
 
 				{{-- BUTTONS --}}
-				<div class="row" style="padding-left: 1%">
+				<div class="row col-xs-offset-3 col-xs-6" style="padding-left: 0.5%; margin-top: 0.5%">
 					<button type="button" class="btn btn-success submitbtn" data-id="search">Search</button>
 					<button type="button" class="btn btn-primary submitbtn" data-id="generate">Generate PDF</button>
 				</div>
@@ -177,11 +134,11 @@ Bayanihan Center | Reports
 	$(function() {
 		$('.submitbtn').on('click', function() {
 			if ($(this).data('id') == 'search') {
-				var route = "{{ route('admin.reports.update') }}";
+				var route = "{{ route('admin.reports-reservation.update') }}";
 				$('#selectionform').attr('action', route);
 				$('#selectionform').submit();
 			} else if ($(this).data('id') == 'generate') {
-				var route = "{{ route('admin.reports.generatepdf') }}";
+				var route = "{{ route('admin.reports-reservation.generatepdf') }}";
 				$('#selectionform').attr('action', route);
 				$('#selectionform').submit();
 			}
@@ -202,7 +159,7 @@ Bayanihan Center | Reports
 		},
 		function (start, end) {
 			$('#daterange-btn span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
-			$('#inputrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start)).getMonth()).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end)).getMonth()).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
+			$('#inputrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
 			console.log($('#inputrange').val());
 		})
 	});

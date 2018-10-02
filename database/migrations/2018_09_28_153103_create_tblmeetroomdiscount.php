@@ -15,7 +15,9 @@ class CreateTblmeetroomdiscount extends Migration
     {
         Schema::create('tblmeetroomdiscount', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('timeblockcode', 10);
             $table->string('code', 50)->unique()->nullable();
+            $table->string('name', 75)->unique();
             $table->decimal('floorarea', 6, 2);
             $table->integer('mincapacity');
             $table->integer('maxcapacity');

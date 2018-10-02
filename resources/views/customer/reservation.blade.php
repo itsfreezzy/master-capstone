@@ -149,6 +149,8 @@ NEW RESERVATION | USER - UNILAB Bayanihan Center
 
 <script>
 $(function() {
+    $('#meetingrooms').hide();
+    $('#functionhalls').hide();
     $('#smartwizard').smartWizard({
         selected: 0,
         theme: 'arrows',
@@ -369,6 +371,7 @@ function onPrefRoomChange() {
 
         $.each($meetingrooms, function(key, val) {
             if (lastselected.val() == val.code) {
+                console.log($(this))
                 $('#timestart').val(val.timestart);
                 $('#timestart').prop('readonly', true);
                 $('#timeend').val(val.timeend);

@@ -18,8 +18,7 @@ use Validator;
 
 class ReportController extends Controller
 {
-    public function reservation()
-    {  
+    public function reservation() {  
         //###############################################################################################################
         // Reservations Per Function Room
         //###############################################################################################################
@@ -67,7 +66,7 @@ class ReportController extends Controller
         // Reservations Per Event Nature
         //###############################################################################################################
         $eventnatures = array();
-        $reseventnatureondb = ReservationInfo::take(5)->get();
+        $reseventnatureondb = ReservationInfo::take(5)->get();//join('tblreservations', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')->where('status', '!=', 'Pending')->take(5)->get();
         foreach ($reseventnatureondb as $eventnature) {
             foreach (explode(",", $eventnature->eventnature) as $events) {
                 $eventnatures[$events] = 0;
@@ -144,22 +143,18 @@ class ReportController extends Controller
         }
     }
 
-    public function sales()
-    {
-        return view('admin.reports-sales');
-    }
-
     public function updateReservationReport(Request $request) {
         $validator = Validator::make($request->all(), [
             'daterange' => 'required',
-            'functionrooms' => 'required',
-            'natures' => 'required',
-            'status' => 'required',
         ]);
 
         if ($validator->fails()) {
             return redirect()->route('admin.reports.reservation')->withErrors($validator)->withInput()->with(['error' => 'Please select a date range.']);
         }
+
+        $dates = explode('|', $request->daterange);
+        $dates[0] = $dates[0]; //. ' 00:00:00';
+        $dates[1] = $dates[1]; //. ' 23:59:00';
 
         //###############################################################################################################
         // Reservations Per Function Room
@@ -169,6 +164,7 @@ class ReportController extends Controller
                     ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
                     ->join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')
                     ->select(DB::raw('COUNT(*) as reservationctr, tblfunctionhalls.name, tbleventvenue.venuecode'))
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)
                     ->groupBy('tbleventvenue.venuecode', 'tblfunctionhalls.name')
                     ->orderBy('reservationctr', 'DESC')
                     ->take(5)
@@ -178,6 +174,7 @@ class ReportController extends Controller
                     ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
                     ->join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')
                     ->select(DB::raw('COUNT(*) as reservationctr, tblmeetingrooms.name, tbleventvenue.venuecode'))
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)
                     ->groupBy('tbleventvenue.venuecode', 'tblmeetingrooms.name')
                     ->orderBy('reservationctr', 'DESC')
                     ->take(5)
@@ -201,14 +198,15 @@ class ReportController extends Controller
             array_push($colors, $this->random_color());
         }
         $resperfuncroomchart->labels($funcrooms);
-        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->color($this->random_color());
+        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->color($this->random_color()); 
 
 
         //###############################################################################################################
         // Reservations Per Event Nature
         //###############################################################################################################
         $eventnatures = array();
-        $reseventnatureondb = ReservationInfo::take(5)->get();
+        $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)->take(5)->get();
+
         foreach ($reseventnatureondb as $eventnature) {
             foreach (explode(",", $eventnature->eventnature) as $events) {
                 $eventnatures[$events] = 0;
@@ -229,6 +227,7 @@ class ReportController extends Controller
         foreach ($eventnatures as $key => $value) {
             $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
         }
+        // dd($respereventnaturechart);
 
 
         //###############################################################################################################
@@ -236,6 +235,7 @@ class ReportController extends Controller
         //###############################################################################################################
         $resstatondb = DB::table('tblreservations')
                         ->select(DB::raw('status, count(*) as ctr'))
+                        ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)
                         ->groupBy('status')
                         ->get();
 
@@ -271,14 +271,18 @@ class ReportController extends Controller
         $functionhalls = EventVenue::join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'FH%')->groupBy('name')->get();
         $meetingrooms = EventVenue::join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'MR%')->groupBy('name')->get();
 
-        return view('admin.reports.reservation')->with([
-            'resperfuncroomchart' => $resperfuncroomchart, 
-            'respereventnaturechart' => $respereventnaturechart,
-            'resperstatchart' => $resperstatchart,
-            'natures' => $natures,
-            'functionhalls' => $functionhalls,
-            'meetingrooms' => $meetingrooms,
-        ]);
+        if($resperfuncroomchart->datasets[0]->values != NULL && $respereventnaturechart->datasets[0]->values != NULL && $resperstatchart->datasets[0]->values != NULL) {
+            return view('admin.reports-reservation')->with([
+                'resperfuncroomchart' => $resperfuncroomchart, 
+                'respereventnaturechart' => $respereventnaturechart,
+                'resperstatchart' => $resperstatchart,
+                'natures' => $natures,
+                'functionhalls' => $functionhalls,
+                'meetingrooms' => $meetingrooms,
+            ]);
+        } else {
+            return redirect()->back()->with(['error' => 'No data exists on the specified parameters.']);
+        }
     }
 
     public function generateReservationReport(Request $request) {
@@ -292,6 +296,85 @@ class ReportController extends Controller
         if ($validator->fails()) {
             return redirect()->route('admin.reports.reservation')->withErrors($validator)->withInput()->with(['error' => 'Please select a date range.']);
         }
+
+
+    }
+    
+    public function sales() {
+        $reservationfee = 0;
+        $downpayment = 0;
+        $fullpayment = 0;
+        $depositcharge = 0;
+        $corkagefee = 0;
+        
+        $payments = Reservation::join('tblpayments', 'tblreservations.code', '=', 'tblpayments.reservationcode')
+                    ->join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
+                    ->where('paymenttype', '!=', 'Security Deposit')
+                    ->where('isAccredited', '=', '1')
+                    ->get();
+        foreach ($payments as $payment) {
+            if ($payment->paymenttype == 'Reservation Fee') {
+                $reservationfee += $payment->amount;
+            } else if ($payment->paymenttype == '50% Downpayment') {
+                $downpayment += $payment->amount;
+            } else if ($payment->paymenttype == '50% Full Payment') {
+                $fullpayment += $payment->amount;
+            } else {
+                $depositcharge += $payment->amount;
+            }
+        }
+        // $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->get();
+
+        // $cancelledreservations = Reservation::onlyTrashed()
+        //                         ->join('tblpayments', 'tblpayments.reservationcode', '=', 'tblreservations.code')
+        //                         ->whereIn('paymenttype', ['50% Downpayment', '50% Full Payment'])
+        //                         ->select('reservationcode', DB::raw('tblreservations.deleted_at as deleted_at'), 'tblreservations.eventdate', DB::raw('SUM(amount) as paid'))
+        //                         ->groupBy('reservationcode', 'deleted_at', 'eventdate')
+        //                         ->get();
+        // foreach ($cancelledreservations as $res) {
+        //     if (date_diff(date_create($res->eventdate . "00:00:00"), date_create($res->deleted_at))->m > 1 ) {
+        //         $cancelledressales += ($res->paid - 5000) / 2;
+        //     } else {
+        //         $cancelledressales += ($res->paid - 5000);
+        //     }
+        // }
+        // dd($cancelledreservations);
+        //###############################################################################################################
+        // Sales Percentage Chart
+        //###############################################################################################################
+        $eventnatures = array();
+        $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)->take(5)->get();
+
+        foreach ($reseventnatureondb as $eventnature) {
+            foreach (explode(",", $eventnature->eventnature) as $events) {
+                $eventnatures[$events] = 0;
+            }
+        }
+
+        foreach ($eventnatures as $key => $value) {
+            foreach ($reseventnatureondb as $eventnature) {
+                foreach (explode(",", $eventnature->eventnature) as $events) {
+                    if ($key == $events) {
+                        $eventnatures[$key] += 1;
+                    }
+                }
+            }
+        }
+
+        $respereventnaturechart = new SampleChart;
+        foreach ($eventnatures as $key => $value) {
+            $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
+        }
+
+        return view('admin.reports-sales');
+    }
+
+    public function updateSalesReport(Request $request) {
+        dd($request->all());
+    }
+
+    public function generateSalesReport(Request $request) {
+        //
     }
 
     function random_color_part() {

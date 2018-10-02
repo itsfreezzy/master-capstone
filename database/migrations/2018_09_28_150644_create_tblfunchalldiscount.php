@@ -16,6 +16,7 @@ class CreateTblfunchalldiscount extends Migration
         Schema::create('tblfunchallsdiscount', function (Blueprint $table) {
             $table->increments('id');
             $table->string('code', 50)->unique()->nullable();
+            $table->string('name', 250)->unique();
             $table->decimal('floorarea', 6, 2);
             $table->integer('mincapacity');
             $table->integer('maxcapacity');

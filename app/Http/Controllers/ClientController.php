@@ -104,12 +104,13 @@ class ClientController extends Controller
     ## New Reservation Functions
     ############################################################################################################################
     public function showReservationForm(){
-        $meetingrooms = MeetingRoom::all();
+        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
         $functionhalls = FunctionHall::all();
         $equipments = Equipment::all();
         $eventnatures = EventNature::all();
         $eventsetups = EventSetup::all();
         $caterers = Caterer::all();
+        $timeblocks = Timeblock::all();
 
         return view('customer.reservation')->with([
             'meetingrooms' => $meetingrooms,
@@ -118,10 +119,12 @@ class ClientController extends Controller
             'eventnatures' => $eventnatures,
             'eventsetups' => $eventsetups,
             'caterers' => $caterers,
+            'timeblocks' => $timeblocks,
         ]);
     }
     
     public function submitReservationForm(Request $request, Captcha $captcha){
+        // dd($request->PrefFuncRooms[0]);
 
         $response = $captcha->check($request);
         if (! $response->isVerified()) {
@@ -154,6 +157,13 @@ class ClientController extends Controller
                 ->withInput()
                 ->with(['error' => 'There is an already existing reservation for the date and functiom room(s) you want. Please try again.']);
         }
+
+        
+        // if (explode('-', $request->PrefFuncRooms[0])[0] == 'MR') {
+        //     dd('MR');
+        // } else {
+        //     dd('FH');
+        // }
         
         $reservationinfo = $this->saveReservationInfo($request);
         $reservation = $this->saveReservation($request, $reservationinfo);
@@ -198,7 +208,7 @@ class ClientController extends Controller
                 array_push($price, $ev->venuecode);
             }
             $price = implode("|", $price);
-            $discountedPrice = DB::table('tblfunchallsdiscount')->where('code', $price)->firstOrFail();
+            $discountedPrice = DB::table('tblfunchallsdiscount')->where('code', $price)->first();
 
             if ($discountedPrice) {
                 if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
@@ -240,7 +250,7 @@ class ClientController extends Controller
                 array_push($price, $ev->venuecode);
             }
             $price = implode("|", $price);
-            $discountedPrice = DB::table('tblmeetroomdiscount')->where('code', $price)->firstOrFail();
+            $discountedPrice = DB::table('tblmeetroomdiscount')->where('code', $price)->first();
 
             if ($discountedPrice) {
                 $eventgrandtotal += $discountedPrice->rateperblock;
@@ -349,11 +359,20 @@ class ClientController extends Controller
 
     public function saveReservationVenue(Request $request, $reservation) {
 
-        foreach ($request->PrefFuncRooms as $preffuncroom) {
-            $eventvenue = new EventVenue;
-            $eventvenue->reservationcode = $reservation->code;
-            $eventvenue->venuecode = $preffuncroom;
-            $eventvenue->save();
+        if (count($request->PrefFuncRooms) == 1) {
+            foreach (explode('|', $request->PrefFuncRooms[0]) as $preffuncroom) {
+                $eventvenue = new EventVenue;
+                $eventvenue->reservationcode = $reservation->code;
+                $eventvenue->venuecode = $preffuncroom;
+                $eventvenue->save();
+            }
+        } else {
+            foreach ($request->PrefFuncRooms as $preffuncroom) {
+                $eventvenue = new EventVenue;
+                $eventvenue->reservationcode = $reservation->code;
+                $eventvenue->venuecode = $preffuncroom;
+                $eventvenue->save();
+            }
         }
 
         return EventVenue::where('reservationcode', $reservation->code)->get();
@@ -581,6 +600,7 @@ class ClientController extends Controller
         $reservation = Reservation::find($id);
         $reservation->status = "Cancelled";
         $reservation->save();
+        $reservation->delete();
             
         return redirect()->route('client.landingpage')->with(['success' => 'Reservation successfully cancelled.']);
     }
@@ -918,60 +938,113 @@ class ClientController extends Controller
                             ->where('reservationcode', $reservation->code)
                             ->get();
 
-            if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->wholedayrate;
-                }
+            $price = array();
+            foreach ($eventvenues as $ev) {
+                array_push($price, $ev->venuecode);
+            }
+            $price = implode("|", $price);
+            $discountedPrice = DB::table('tblfunchallsdiscount')->where('code', $price)->first();
 
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->hourlyexcessrate * (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h - 10);
+            if ($discountedPrice) {
+                if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
+                    $eventgrandtotal += $discountedPrice->wholedayrate;
+                    $eventgrandtotal += $discountedPrice->hourlyexcessrate * (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h - 10);
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
+                    $eventgrandtotal += $discountedPrice->wholedayrate;
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 1) {
+                    $eventgrandtotal += $discountedPrice->halfdayrate;
                 }
-            } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->wholedayrate;
-                }
-            } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 1) {
-                foreach ($eventvenues as $eventvenue) {
-                    $eventgrandtotal += $eventvenue->halfdayrate;
+            } else {
+                if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 10) {
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->wholedayrate;
+                    }
+
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->hourlyexcessrate * (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h - 10);
+                    }
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->wholedayrate;
+                    }
+                } elseif (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 1) {
+                    foreach ($eventvenues as $eventvenue) {
+                        $eventgrandtotal += $eventvenue->halfdayrate;
+                    }
                 }
             }
+
+            
         } elseif ($prefix[0] == 'MR') {
             $eventvenues = EventVenue::join('tblmeetingrooms', 'tbleventvenue.venuecode', '=', 'tblmeetingrooms.code')
                             ->where('reservationcode', $reservation->code)
                             ->get();
-            
-            foreach ($eventvenues as $eventvenue) {
-                $eventgrandtotal += $eventvenue->rateperblock;
+
+            $price = array();
+            foreach ($eventvenues as $ev) {
+                array_push($price, $ev->venuecode);
             }
+            $price = implode("|", $price);
+            $discountedPrice = DB::table('tblmeetroomdiscount')->where('code', $price)->first();
+
+            if ($discountedPrice) {
+                $eventgrandtotal += $discountedPrice->rateperblock;
+            } else {
+                foreach ($eventvenues as $eventvenue) {
+                    $eventgrandtotal += $eventvenue->rateperblock;
+                }
+            }
+            
+            
         } else {
             return dd("ERROR");
         }
 
-        foreach ($eventvenues as $eventvenue) {
+        if ($discountedPrice) {
             if (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i < 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->ingress))->h == 0) {
 
             }
             elseif (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i >= 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h == 0) {
-                $eventgrandtotal += $eventvenue->ineghourlyrate;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate;
             } else {
-                $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate * date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h;
             }
-        }
 
-        foreach ($eventvenues as $eventvenue) {
             if (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i < 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
 
             }
             elseif (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i >= 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
-                $eventgrandtotal += $eventvenue->ineghourlyrate;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate;
             } else {
-                $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h;
+                $eventgrandtotal += $discountedPrice->ineghourlyrate * date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h;
+            }
+        } else {
+            foreach ($eventvenues as $eventvenue) {
+                if (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i < 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->ingress))->h == 0) {
+
+                }
+                elseif (date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->i >= 45 && date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h == 0) {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate;
+                } else {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timestart), date_create($reservationinfo->timeingress))->h;
+                }
+            }
+
+            foreach ($eventvenues as $eventvenue) {
+                if (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i < 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
+
+                }
+                elseif (date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->i >= 45 && date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h == 0) {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate;
+                } else {
+                    $eventgrandtotal += $eventvenue->ineghourlyrate * date_diff(date_create($reservationinfo->timeeggress), date_create($reservationinfo->timeend))->h;
+                }
             }
         }
 
         $title = $reservation->code . '_' . time() . '.pdf';
 
-        $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix'));
+        $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
         return $pdf->stream($reservation->code . '_' . time() . '.pdf');
     }
 
@@ -1107,12 +1180,15 @@ class ClientController extends Controller
     }
 
     public function test() {
-        $meetingrooms = MeetingRoom::all();
+        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
         $functionhalls = FunctionHall::all();
         $equipments = Equipment::all();
         $eventnatures = EventNature::all();
         $eventsetups = EventSetup::all();
         $caterers = Caterer::all();
+        $timeblocks = Timeblock::all();
+        $meetrmdiscount = DB::table('tblmeetroomdiscount')->join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetroomdiscount.timeblockcode')->select('tblmeetroomdiscount.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
+
 
         return view('customer.test')->with([
             'meetingrooms' => $meetingrooms,
@@ -1121,6 +1197,8 @@ class ClientController extends Controller
             'eventnatures' => $eventnatures,
             'eventsetups' => $eventsetups,
             'caterers' => $caterers,
+            'timeblocks' => $timeblocks,
+            'meetrmdiscount' => $meetrmdiscount,
         ]);
     }
 }

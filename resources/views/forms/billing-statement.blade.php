@@ -49,12 +49,20 @@
                             @elseif ($prefix[0] == 'MR')
                             <th style="width: 25%; vertical-align:middle">Function Room</th>
                             <th style="width: 25%; vertical-align:middle">Floor Area</th>
-                            <th style="width: 25%; vertical-align:middle">Rate Per Block (2 hrs)</th>
+                            <th style="width: 25%; vertical-align:middle">Rate Per Block </th>
                             <th style="width: 25%; vertical-align:middle">Ingress/Eggress Hourly Rate</th>
                             @endif
                         </tr>
                     </thead>
                     <tbody>
+                        @if ($discountedPrice)
+                        <tr>
+                            <td>{{ $discountedPrice->name }}</td>
+                            <td>{{ number_format($discountedPrice->floorarea, 2) }}</td>
+                            <td>PhP {{ number_format($discountedPrice->rateperblock, 2) }}</td>
+                            <td>PhP {{ number_format($discountedPrice->ineghourlyrate, 2) }}</td>
+                        </tr>
+                        @else
                         @foreach($eventvenues as $eventvenue)
                         <tr>
                             <td>{{ $eventvenue->name }}</td>
@@ -70,16 +78,31 @@
                             @endif
                         </tr>
                         @endforeach
+                        @endif
                         <tr>
+                            @if ($prefix[0] == 'FH')
                             <td colspan="4" class="text-right" style="background: lightgrey; vertical-align: middle">
                                 <strong>Event Duration & Cost Type</strong>
                             </td>
-                            <td colspan="2">{{ date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h }} hours and {{ date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->i }} minutes <br> {{ date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5 ? 'Whole Day Rate' : 'Half Day Rate' }}</td>
+                            <td colspan="2">{{ $reservationinfo->timeend != '00:00:00' ? date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h : date_diff(date_create('23:59:00'), date_create($reservationinfo->timestart))->h }} hours and {{ date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->i }} minutes <br> {{ date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5 ? 'Whole Day Rate' : 'Half Day Rate' }}</td>
+                            @elseif ($prefix[0] == 'MR')
+                            <td colspan="2" class="text-right" style="background: lightgrey; vertical-align: middle">
+                                <strong>Event Duration & Cost Type</strong>
+                            </td>
+                            <td colspan="2">{{ $reservationinfo->timeend != '00:00:00' ? date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h : date_diff(date_create('23:59:00'), date_create($reservationinfo->timestart))->h }} hours and {{ date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->i }} minutes
+                            </td>
+                            @endif
                         </tr>
                         <tr>
+                            @if ($prefix[0] == 'FH')
                             <td colspan="4" class="text-right" style="background: lightgrey;">
                                 <strong>Total</strong>
                             </td>
+                            @elseif ($prefix[0] == 'MR')
+                            <td colspan="2" class="text-right" style="background: lightgrey;">
+                                <strong>Total</strong>
+                            </td>
+                            @endif
                             <td colspan="2">PhP {{ number_format($eventgrandtotal, 2) }}</td>
                         </tr>
                     </tbody>

@@ -60,12 +60,10 @@ Schedules - UNILAB Bayanihan Center
                         @foreach ($funchalls as $fhall)
                         <li data-id="{{ $fhall->code }}">{{ $fhall->name }}</li>
                         @endforeach
+                        @foreach ($fhdiscount as $fh) 
+                        <li data-id="{{ $fh->code }}" >{{ $fh->name }}</li>
+                        @endforeach
                     </ul>
-                    {{-- <select name="funchall" id="funchall" class="form-control" aria-placeholder="test"style="width: 100%">
-                        <option value="">SELECT FUNCTION HALL</option>
-                        <option value="FH">Function Hall</option>
-                        <option value="MR">Meeting Room</option>
-                    </select> --}}
                 </div>
                 <div id="mrgroup">
                     <div class="form-group" id="mrtimeblock">
@@ -84,20 +82,16 @@ Schedules - UNILAB Bayanihan Center
                             @foreach ($meetrooms as $mroom)
                             <li data-id="{{ $mroom->code }}" data-tbcode="{{ $mroom->timeblockcode }}">{{ $mroom->name }}</li>
                             @endforeach
+                            @foreach ($meetrmdiscount as $mr) 
+                            <li data-id="{{ $mr->code }}" data-tbcode="{{ $mr->timeblockcode }}">{{ $mr->name }}</li>
+                            @endforeach
                         </ul>
-                        {{-- <select name="meetroom" id="meetroom" class="form-control" aria-placeholder="test" multiple style="width: 100%">
-                            <option value="">SELECT MEETING ROOM</option>
-                            <option value="FH">Function Hall</option>
-                            <option value="MR">Meeting Room</option>
-                        </select> --}}
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="glyphicon glyphicon-remove-sign"></i> Cancel</button>
-                <button type="button" class="btn btn-info" id="btncheckavailability"> <i class="fa fa-question"></i> Check Availability</button>
-                <button type="submit" class="btn btn-success" id="" data-loading-text="Loading..." autocomplete="off"> <i class="glyphicon glyphicon-ok-sign"></i> Submit</button>
+                <button type="button" class="btn btn-success" data-dismiss="modal" data-loading-text="Loading..." autocomplete="off"> <i class="glyphicon glyphicon-ok-sign"></i> OK</button>
             </div>
             </form>
         </div>
@@ -150,7 +144,7 @@ $(function () {
                         }
 
                         $.each(funchalls, function(index, fhall){
-                            if (id == fhall.venuecode) {
+                            if (id.includes(fhall.venuecode)) {
                                 elem.wrap('<strike>');
                                 return false;
                             }
@@ -159,32 +153,59 @@ $(function () {
                 }
             });
         } else if ($(this).val() == 'MR') {
-            $.ajax({
-                url: '/availability/get',
-                method: 'POST',
-                data: {
-                    _token: $('meta[name=csrf-token]').attr('content'),
-                    date: $('#seldate').val(),
-                    type: $(this).val(),
-                },
-                success: function(meetrooms) {
-                    $('#fhgroup').hide();
-                    $('#mrgroup').show();
+            $('#fhgroup').hide();
+            $('#mrgroup').show();
 
-                    $('#mrtimeblock').on('change', function() {
-                        if ($(this).val() != '' || $(this).val() != null) {
+            $('#timeblock').on('change', function() {
+                $.ajax({
+                    url: '/availability/get',
+                    method: 'POST',
+                    data: {
+                        _token: $('meta[name=csrf-token]').attr('content'),
+                        date: $('#seldate').val(),
+                        type: $('#funcroomtype').val(),
+                        timeblock: $('#timeblock').val(),
+                    },
+                    success: function(meetrooms) {
+                        if ($('#timeblock').val() != '' || $('#timeblock').val() != null) {
+                            var seltb = $('#timeblock').val();
+
+                            $('#meetroomlist li').each(function() {
+                                var meetroom = $(this);
+                                var meetroomtb = $(this).data('tbcode');
+
+                                if (meetroomtb != seltb) {
+                                    meetroom.hide();
+                                } else {
+                                    if (meetroom.parent().get(0).tagName == 'STRIKE') {
+                                        meetroom.unwrap();
+                                    }
+
+                                    $.each(meetrooms, function(index, mroom){
+                                        if (meetroom.data('id').includes(mroom.venuecode)) {
+                                            elem.wrap('<strike>');
+                                            return false;
+                                        }
+                                    });
+
+                                    meetroom.show();
+                                }
+                            });
+
                             $('#meetingroom').show();
                         } else {
                             $('#meetingroom').hide();
                         }
-                    });
-                }
+                    }
+                });
             });
         } else {
             $('#fhgroup').hide();
             $('#mrgroup').hide();
         }
     });
+
+    
 
     $('#modalShow').on('hidden.bs.modal', function(e){
         $('#mrgroup').hide();

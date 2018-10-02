@@ -82,6 +82,8 @@ class WebNavigationController extends Controller
         $timeblocks = Timeblock::all();
         $funchalls = FunctionHall::all();
         $meetrooms = MeetingRoom::all();
+        $meetrmdiscount = DB::table('tblmeetroomdiscount')->get();
+        $fhdiscount = DB::table('tblfunchallsdiscount')->get();
 
         $events = [];
         foreach ($reservations as $reservation) {
@@ -120,6 +122,8 @@ class WebNavigationController extends Controller
             'timeblocks' => $timeblocks,
             'meetrooms' => $meetrooms,
             'funchalls' => $funchalls,
+            'meetrmdiscount' => $meetrmdiscount,
+            'fhdiscount' => $fhdiscount,
         ]);
     }
 
@@ -173,7 +177,8 @@ class WebNavigationController extends Controller
     {
         $unavailablerooms = DB::table('tbleventvenue')
                                 ->join('tblreservations', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
-                                ->select('venuecode')
+                                ->join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
+                                ->select('venuecode', 'timestart', 'timeend')
                                 ->where('tblreservations.status', 'like', 'Confirmed')
                                 ->where('tblreservations.eventdate', 'like', $request->input('date'))
                                 ->get()->toArray();
@@ -296,7 +301,20 @@ class WebNavigationController extends Controller
 
             return $reservedfunchalls;
         } else if ($request->type == 'MR') {
-            return 'meeting room';
+            $date = date('Y-m-d', strtotime($request->date));
+            $times = Timeblock::select('timestart', 'timeend')->where('code', $request->timeblock)->firstOrFail();
+
+            $reservedmeetrooms = DB::table('tbleventvenue')
+                                ->join('tblreservations', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
+                                ->join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
+                                ->where('tblreservations.status', 'like', 'Confirmed')
+                                ->where('tblreservations.eventdate', $date)
+                                ->where('tbleventvenue.venuecode', 'like', 'MR%')
+                                ->where('tblreservationinfo.timestart', $times->timestart)
+                                ->where('tblreservationinfo.timeend', $times->timeend)
+                                ->get();
+
+            return $reservedmeetrooms;
         } else {
             return 'error';
         }

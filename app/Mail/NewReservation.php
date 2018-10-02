@@ -29,7 +29,7 @@ class NewReservation extends Mailable
         if ($funcroomtype == 'FH') {
             $this->eventvenues = DB::table('tbleventvenue')->join('tblfunctionhalls', 'tbleventvenue.venuecode', '=', 'tblfunctionhalls.code')->where('reservationcode', $reservation->code)->get();
         } elseif ($funcroomtype == 'MR') {
-            $this->eventvenues = DB::table('tbleventvenue')->join('tblfunctionhalls', 'tbleventvenue.venuecode', '=', 'tblmeetingrooms.code')->where('reservationcode', $reservation->code)->get();
+            $this->eventvenues = DB::table('tbleventvenue')->join('tblmeetingrooms', 'tbleventvenue.venuecode', '=', 'tblmeetingrooms.code')->where('reservationcode', $reservation->code)->get();
         }
         $this->eventequips = EventEquipment::where('reservationcode', $reservation->code)->get();
         $this->reservationcontacts = ReservationContact::where('reservationcode', $reservation->code)->get();
