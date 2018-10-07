@@ -18,8 +18,10 @@ use App\Mail\UpdatePayment;
 use App\Mail\UpdateReservation;
 use App\Mail\Welcome;
 use App\Mail\NewReservationToUser;
+use App\Mail\SlotTaken;
 use App\User;
 use Anam\Captcha\Captcha;
+use Artisan;
 
 class ClientController extends Controller
 {
@@ -104,13 +106,15 @@ class ClientController extends Controller
     ## New Reservation Functions
     ############################################################################################################################
     public function showReservationForm(){
-        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
+        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->where('name', 'not like', '%old%')->get();
         $functionhalls = FunctionHall::all();
         $equipments = Equipment::all();
         $eventnatures = EventNature::all();
         $eventsetups = EventSetup::all();
         $caterers = Caterer::all();
         $timeblocks = Timeblock::all();
+        $meetrmdiscount = DB::table('tblmeetroomdiscount')->join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetroomdiscount.timeblockcode')->select('tblmeetroomdiscount.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
+
 
         return view('customer.reservation')->with([
             'meetingrooms' => $meetingrooms,
@@ -120,12 +124,11 @@ class ClientController extends Controller
             'eventsetups' => $eventsetups,
             'caterers' => $caterers,
             'timeblocks' => $timeblocks,
+            'meetrmdiscount' => $meetrmdiscount,
         ]);
     }
     
     public function submitReservationForm(Request $request, Captcha $captcha){
-        // dd($request->PrefFuncRooms[0]);
-
         $response = $captcha->check($request);
         if (! $response->isVerified()) {
             return redirect()->route('client.reservationform')->withInput()->with(['error' => $response->errors()]);
@@ -134,7 +137,6 @@ class ClientController extends Controller
         $validator = Validator::make($request->all(), $this->rules(), $this->messages());
 
         if ($validator->fails()) {
-            dd($validator);
             return redirect()
                     ->route('client.reservationform')
                     ->withErrors($validator)
@@ -157,13 +159,6 @@ class ClientController extends Controller
                 ->withInput()
                 ->with(['error' => 'There is an already existing reservation for the date and functiom room(s) you want. Please try again.']);
         }
-
-        
-        // if (explode('-', $request->PrefFuncRooms[0])[0] == 'MR') {
-        //     dd('MR');
-        // } else {
-        //     dd('FH');
-        // }
         
         $reservationinfo = $this->saveReservationInfo($request);
         $reservation = $this->saveReservation($request, $reservationinfo);
@@ -187,7 +182,7 @@ class ClientController extends Controller
         return redirect()->route('client.landingpage')->with(['success' => 'Reservation form successfully submitted. Please wait pay the reservation fee ASAP to guarantee your reservation.']);
     }
 
-    public function computeTotalPrice(Reservation $reservation, ReservationInfo $reservationinfo) {
+    public function computeTotalPrice(Reservation $reservation, ReservationInfo $reservationinfo, $update = false) { 
         $equipgrandtotal = 0;
         $eventgrandtotal = 0;
         $eventequipments = DB::table('tbleventequipments')
@@ -197,6 +192,7 @@ class ClientController extends Controller
         foreach ($eventequipments as $eventequipment) {
             $equipgrandtotal += $eventequipment->totalprice;
         }
+        
         $prefix = explode("-", EventVenue::where('reservationcode', $reservation->code)->first()->venuecode);
         if ($prefix[0] == 'FH') {
             $eventvenues = EventVenue::join('tblfunctionhalls', 'tbleventvenue.venuecode', '=', 'tblfunctionhalls.code')
@@ -307,10 +303,26 @@ class ClientController extends Controller
             }
         }
 
-        // session(['eventtotal' => $eventgrandtotal, 'equiptotal' => $equipgrandtotal]);
+        if ($update) {
+            $reservation->total = ($eventgrandtotal + $equipgrandtotal + 15000) * 1.12;
+            $reservation->balance = $reservation->total - $reservation->paid;
+
+            if (!$reservationinfo->isaccredited) { 
+                $reservation->total = ($eventgrandtotal + $equipgrandtotal + 15000 + 15000) * 1.12;
+                $reservation->balance = ($eventgrandtotal + $equipgrandtotal + 15000 + 15000) * 1.12;
+            }
+            $reservation->save();
+
+            return $reservation;
+        }
 
         $reservation->total = ($eventgrandtotal + $equipgrandtotal + 15000) * 1.12;
         $reservation->balance = ($eventgrandtotal + $equipgrandtotal + 15000) * 1.12;
+
+        if (!$reservationinfo->isaccredited) { 
+            $reservation->total = ($eventgrandtotal + $equipgrandtotal + 15000 + 15000) * 1.12;
+            $reservation->balance = ($eventgrandtotal + $equipgrandtotal + 15000 + 15000) * 1.12;
+        }
         $reservation->paid = 0;
         $reservation->save();
 
@@ -445,7 +457,7 @@ class ClientController extends Controller
     public function submitNewPayment(Request $request)
     {
         $messages = [
-
+            'paymentproof.required' => 'Payment proof is required!'
         ];
 
         $validator = Validator::make($request->all(), [
@@ -455,7 +467,7 @@ class ClientController extends Controller
             'paymentdate' => 'required',
             'paymentproof' => 'required|max:2',
             'paymentproof.*' => 'image|max:19999',
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return redirect()
@@ -661,6 +673,7 @@ class ClientController extends Controller
 
     public function editReservationInfo($id)
     {
+        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
         $reservation = Reservation::find($id);
         $reservationinfo = ReservationInfo::where('id', $reservation->reservationinfoid)->first();
         $eventvenues = EventVenue::where('reservationcode', $reservation->code)->get();
@@ -668,6 +681,7 @@ class ClientController extends Controller
         $reservationcontacts = ReservationContact::where('reservationcode', $reservation->code)->get();
         $contacts = $this->getReservationContacts($reservationcontacts);
         $ctrEquip = count($eventequipments);
+        $timeblocks = Timeblock::all();
 
         $grandtot = 0;
         foreach ($eventequipments as $eq) {
@@ -681,10 +695,21 @@ class ClientController extends Controller
         $eventsetups = EventSetup::all();
         $caterers = Caterer::all();
         $payments = Payment::where('reservationcode', $reservation->code)->get();
+        $meetrmdiscount = DB::table('tblmeetroomdiscount')->join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetroomdiscount.timeblockcode')->select('tblmeetroomdiscount.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
+
 
         if ( Auth::guard('customer')->user()->code != $reservation->customercode) {
             return redirect()->route('client.landingpage')->with(['error' => 'Cannot access reservation information of other clients.']);
         }
+
+        $prefix = EventVenue::where('reservationcode', $reservation->code)->first();
+        $prefix = explode('-', $prefix->venuecode)[0];
+        $timeblockcode = null;
+        if ($prefix == 'MR') {
+            $timeblockcode = Timeblock::where('timestart', $reservationinfo->timestart)->where('timeend', $reservationinfo->timeend)->first();
+        }
+
+        $time = date_diff(date_create($reservation->eventdate), date_create(date('Y-m-d')));
 
 
         return view('customer.edit-reservation')->with([
@@ -702,19 +727,57 @@ class ClientController extends Controller
             'ctrEquip' => $ctrEquip,
             'grandtot' => $grandtot,
             'payments' => $payments,
+            'timeblocks' => $timeblocks,
+            'meetrmdiscount' => $meetrmdiscount,
+            'prefix' => $prefix,
+            'timeblockcode' => $timeblockcode,
+            'meetingrooms' => $meetingrooms,
+            'time' => $time,
         ]);
     }
 
-    public function updateReservationInfo(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
+    public function updateRules(Reservation $res) {
+        if (date_diff(date_create($res->eventdate), date_create(date('Y-m-d')))->m > 0) {
+            return [
+                'DateFiled' => 'required|',
+                'EventOrganizer' => 'required|',
+                'EventOrganizerContactNo' => 'required|digits:11',
+                'EventOrganizerEmail' => 'required|email',
+                'EventDate' => 'required|after_or_equal:'.$res->eventdate,
+                'EventTitle' => 'required|unique:tblreservations,eventtitle,' . $res->id,
+                'PrefFuncRooms' => 'required|',
+                'CatererName' => 'required|',
+                'isAccredited' => 'required|',
+                'NumAttendees' => 'required|',
+                'TimeStart' => 'required|',
+                'TimeEnd' => 'required|',
+                'IngressTime' => 'required|before:TimeStart',
+                'EggressTime' => 'required|after:TimeEnd',
+                'IngressDate' => 'sometimes|nullable|before:EventDate',
+                'EggressDate' => 'sometimes|nullable|after:EventDate',
+                'EventNature' => 'required|',
+                'equipments' => 'required|',
+                'primcontactinfo.name' => 'required|',
+                'primcontactinfo.address' => 'required|',
+                'primcontactinfo.mobno' => 'digits:11',
+                'primcontactinfo.telno' => 'sometimes|nullable|digits:7',
+                'primcontactinfo.email' => 'email',
+                'seccontactinfo.name' => 'sometimes|nullable|required_with:seccontactinfo.telno|required_with:seccontactinfo.mobno|required_with:seccontactinfo.email|required_with:seccontactinfo.address',
+                'seccontactinfo.telno' => 'sometimes|nullable|digits:7',
+                'seccontactinfo.mobno' => 'sometimes|nullable|required_with:seccontactinfo.name|digits:11',
+                'seccontactinfo.email' => 'sometimes|nullable|required_with:seccontactinfo.name|email',
+                'seccontactinfo.address' => 'sometimes|nullable|required_with:seccontactinfo.name|alpha_dash',
+                'consent' => 'accepted',
+            ];
+        }
+
+        return [
             'DateFiled' => 'required|',
             'EventOrganizer' => 'required|',
             'EventOrganizerContactNo' => 'required|digits:11',
             'EventOrganizerEmail' => 'required|email',
-            'EventDate' => 'required|after:+3 months|',
-            'EventTitle' => 'required|unique:tblreservations,eventtitle,' . $id,
-            'PrefFuncRooms' => 'required|',
+            'EventDate' => 'required|after_or_equal:'.$res->eventdate,
+            'EventTitle' => 'required|unique:tblreservations,eventtitle,' . $res->id,
             'CatererName' => 'required|',
             'isAccredited' => 'required|',
             'NumAttendees' => 'required|',
@@ -737,7 +800,18 @@ class ClientController extends Controller
             'seccontactinfo.email' => 'sometimes|nullable|required_with:seccontactinfo.name|email',
             'seccontactinfo.address' => 'sometimes|nullable|required_with:seccontactinfo.name|alpha_dash',
             'consent' => 'accepted',
-        ], $this->messages());
+        ];
+    }
+
+    public function updateReservationInfo(Request $request, $id, Captcha $captcha)
+    {
+        $response = $captcha->check($request);
+        if (! $response->isVerified()) {
+            return redirect()->route('client.edit.reservationinfo', ['id' => $id])->withInput()->with(['error' => 'Captcha not verified. Please try again.']);
+        }
+        $resdate = Reservation::find($id);
+        
+        $validator = Validator::make($request->all(), $this->updateRules($resdate));
 
         if ($validator->fails()) {
             return redirect()
@@ -746,7 +820,8 @@ class ClientController extends Controller
                     ->withInput();
         }
 
-        $reservationexists = DB::table('tblreservations')
+        if (date_diff(date_create($resdate->eventdate), date_create(date('Y-m-d')))->m > 0) {
+            $reservationexists = DB::table('tblreservations')
                                 ->join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
                                 ->join('tbleventvenue', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
                                 ->select('tblreservations.*', 'tblreservationinfo.*')
@@ -755,24 +830,29 @@ class ClientController extends Controller
                                 ->whereIn('tbleventvenue.venuecode', $request->PrefFuncRooms)
                                 ->where('tblreservations.id', '!=', $id)
                                 ->get();
-        
-        if (count($reservationexists) > 0) {
-            return redirect()
-                    ->route('client.edit.reservationinfo', ['id' => $id])
-                    ->withErrors($validator)
-                    ->withInput()
-                    ->with(['error' => 'There is an already existing reservation for the date and functiom room(s) you want. Please try again.']);
-            
+
+            if (count($reservationexists) > 0) {
+                return redirect()
+                        ->route('client.edit.reservationinfo', ['id' => $id])
+                        ->withErrors($validator)
+                        ->withInput()
+                        ->with(['error' => 'There is an already existing reservation for the date and functiom room(s) you want. Please try again.']);
+                
+            }
         }
 
         $reservationinfo = ReservationInfo::find($id);
         $reservationinfo->numofattendees = $request->NumAttendees;
-        $reservationinfo->timestart = $request->TimeStart;
-        $reservationinfo->timeend = $request->TimeEnd;
-        $reservationinfo->timeingress = $request->IngressTime;
-        $reservationinfo->timeeggress = $request->EggressTime;
-        $reservationinfo->dateingress = $request->IngressDate;
-        $reservationinfo->dateeggress = $request->EggressDate;
+
+        if ($request->has('TimeStart')) {
+            $reservationinfo->timestart = $request->TimeStart;
+            $reservationinfo->timeend = $request->TimeEnd;
+            $reservationinfo->timeingress = $request->IngressTime;
+            $reservationinfo->timeeggress = $request->EggressTime;
+            $reservationinfo->dateingress = $request->IngressDate;
+            $reservationinfo->dateeggress = $request->EggressDate;
+        }
+
         $reservationinfo->eventsetup = $request->EventSetup;
         if (is_array($request->EventNature)) {
             $reservationinfo->eventnature = implode(",", $request->EventNature);
@@ -782,11 +862,11 @@ class ClientController extends Controller
         $reservationinfo->caterer = $request->CatererName;
         $reservationinfo->isaccredited = $request->isAccredited;
         $reservationinfo->save();
+
         
         $reservation = Reservation::find($id);
         $reservation->reservationinfoid = $reservationinfo->id;
         $reservation->customercode = Auth::guard('customer')->user()->code;
-        $reservation->datefiled = $request->DateFiled;
         $reservation->eventorganizer = $request->EventOrganizer;
         $reservation->eocontactno = $request->EventOrganizerContactNo;
         $reservation->eoemail = $request->EventOrganizerEmail;
@@ -794,12 +874,14 @@ class ClientController extends Controller
         $reservation->eventtitle = $request->EventTitle;
         $reservation->save();
 
-        EventVenue::where('reservationcode', $reservation->code)->delete();
-        foreach ($request->PrefFuncRooms as $preffuncroom) {
-            $eventvenue = new EventVenue;
-            $eventvenue->reservationcode = $reservation->code;
-            $eventvenue->venuecode = $preffuncroom;
-            $eventvenue->save();
+        if ($request->has('PrefFuncRooms')) {
+            EventVenue::where('reservationcode', $reservation->code)->delete();
+            foreach ($request->PrefFuncRooms as $preffuncroom) {
+                $eventvenue = new EventVenue;
+                $eventvenue->reservationcode = $reservation->code;
+                $eventvenue->venuecode = $preffuncroom;
+                $eventvenue->save();
+            }
         }
 
         $equipments = $request->equipments;
@@ -846,13 +928,26 @@ class ClientController extends Controller
             ReservationContact::find($request->seccontactinfo['id'])->delete();
         }
 
-        $users = User::all();
-        $cc = array();
-        foreach ($users as $user) {
-            array_push($cc, $user->email);
-        }
-        $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
-        \Mail::to($cc)->send(new UpdateReservation($reservation, $customer));
+        $res = $this->computeTotalPrice($reservation, $reservationinfo, true); //returned an instance of current reservation
+        // dd('im here');
+        // $funcroom = EventVenue::where('reservationcode', $reservation->code)->firstOrFail();
+        // $funcroom = explode('-', $funcroom->venuecode);
+        
+        // if ($funcroom[0] == 'FH') {
+        //     \Mail::to($customer->email)->send(new NewReservationToUser($reservation, $customer, 'FH'));
+        //     \Mail::to($reservation->eoemail)->send(new NewReservationToUser($reservation, $customer, 'FH'));
+        // } elseif ($funcroom[0] == 'MR') {
+        //     \Mail::to($customer->email)->send(new NewReservationToUser($reservation, $customer, 'MR'));
+        //     \Mail::to($reservation->eoemail)->send(new NewReservationToUser($reservation, $customer, 'FH'));
+        // }
+
+        // $users = User::all();
+        // $cc = array();
+        // foreach ($users as $user) {
+        //     array_push($cc, $user->email);
+        // }
+        // $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
+        // \Mail::to($cc)->send(new UpdateReservation($reservation, $customer));
 
         return redirect()->route('client.landingpage')->with(['success' => 'Reservation information successfully updated.']);
     }
@@ -922,7 +1017,12 @@ class ClientController extends Controller
     public function printBillingStatement($id) {
         $reservation = Reservation::where('id', $id)->first();
         $reservationinfo = ReservationInfo::where('id', $reservation->reservationinfoid)->first();
-        $customer = Customer::find(Auth::user()->id);
+        $customer = Customer::where('code', $reservation->customercode)->first();
+
+        if (Auth::guard('customer')->user()->code != $customer->code) {
+            return redirect()->route('client.landingpage')->with(['error' => 'Cannot access reservation information of other clients.']);
+        }
+
         $equipgrandtotal = 0;
         $eventgrandtotal = 0;
         $eventequipments = DB::table('tbleventequipments')
@@ -1141,7 +1241,7 @@ class ClientController extends Controller
     {
         return [
             'DateFiled' => 'required|',
-            'EventOrganizer' => 'required|',
+            'EventOrganizer' => 'required|string|regex:/^[\pL\s]+$/u',
             'EventOrganizerContactNo' => 'required|digits:11',
             'EventOrganizerEmail' => 'required|email',
             'EventDate' => 'required|after:+3 months|',
@@ -1158,12 +1258,12 @@ class ClientController extends Controller
             'EggressDate' => 'sometimes|nullable|required_with:IngressDate|after:EventDate',
             'EventNature' => 'required|',
             'equipments' => 'required|',
-            'primcontactinfo.name' => 'required|',
+            'primcontactinfo.name' => 'required|regex:/^[\pL\s]+$/u',
             'primcontactinfo.address' => 'required|',
             'primcontactinfo.mobno' => 'digits:11',
             'primcontactinfo.telno' => 'sometimes|nullable|digits:7',
             'primcontactinfo.email' => 'email',
-            'seccontactinfo.name' => 'sometimes|nullable|required_with:seccontactinfo.telno|required_with:seccontactinfo.mobno|required_with:seccontactinfo.email|required_with:seccontactinfo.address',
+            'seccontactinfo.name' => 'sometimes|nullable|required_with:seccontactinfo.telno|required_with:seccontactinfo.mobno|required_with:seccontactinfo.email|required_with:seccontactinfo.address|regex:/^[\pL\s]+$/u',
             'seccontactinfo.telno' => 'sometimes|nullable|digits:7',
             'seccontactinfo.mobno' => 'sometimes|nullable|required_with:seccontactinfo.name|digits:11',
             'seccontactinfo.email' => 'sometimes|nullable|required_with:seccontactinfo.name|email',
@@ -1180,6 +1280,16 @@ class ClientController extends Controller
     }
 
     public function test() {
+        dd(Artisan::call('migrate:fresh'));
+        dd('db should be freshly migrated');
+        // $reservation = Reservation::find(2);
+        // $eventvenues = EventVenue::where('reservationcode', $reservation->code)->get();
+        // $funcroom = EventVenue::where('reservationcode', $reservation->code)->firstOrFail();
+        // $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
+        // $funcroom = explode('-', $funcroom->venuecode);
+        
+        // return ((new NewReservationToUser($reservation, $customer, 'FH')))->render();
+
         $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
         $functionhalls = FunctionHall::all();
         $equipments = Equipment::all();
@@ -1187,8 +1297,6 @@ class ClientController extends Controller
         $eventsetups = EventSetup::all();
         $caterers = Caterer::all();
         $timeblocks = Timeblock::all();
-        $meetrmdiscount = DB::table('tblmeetroomdiscount')->join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetroomdiscount.timeblockcode')->select('tblmeetroomdiscount.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
-
 
         return view('customer.test')->with([
             'meetingrooms' => $meetingrooms,
@@ -1198,7 +1306,6 @@ class ClientController extends Controller
             'eventsetups' => $eventsetups,
             'caterers' => $caterers,
             'timeblocks' => $timeblocks,
-            'meetrmdiscount' => $meetrmdiscount,
         ]);
     }
 }

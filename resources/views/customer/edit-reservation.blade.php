@@ -146,8 +146,62 @@ UPDATE RESERVATION | USER - UNILAB Bayanihan Center
 <script src="{{asset('adminlte/bower_components/select2/dist/js/select2.full.min.js')}}"></script>
 
 <script>
-var ctrEquipment = @json($ctrEquip);
 $(function() {
+    var ctrEquipment = @json($ctrEquip);
+    var prefix = @json($prefix);
+    var eventvenues = @json($eventvenues);
+    var reservationinfo = @json($reservationinfo);
+    var timeblockcode = @json($timeblockcode);
+    var $meetingrooms = @json($meetingrooms);
+
+    $('#funcroomtype').val(prefix);
+    $('#prefmr').attr('disabled', true);
+    $('#preffh').attr('disabled', true);
+    
+    if (prefix == 'FH') {
+        $('#meetingroomblock').hide();
+        $('#mrtimeblock').hide();
+        $('#functionhalls').show();
+        $('#preffh').attr('disabled', false);
+        
+        $('#preffh option').each(function() {
+            var fh = $(this);
+            
+            $.each(eventvenues, function(key, val) {
+                if (fh.val() == val.venuecode) {
+                    fh.attr('selected', true);
+                    return false;
+                }
+            });
+        });
+    } else if (prefix == 'MR') {
+        $('#timeblock').val(timeblockcode.code);
+        $('#timeblock').trigger('change');
+        $('#prefmr').attr('disabled', false);
+        $('#prefmr').select2();
+
+        $('#prefmr option').each(function() {
+            var mr = $(this);
+            
+            $.each(eventvenues, function(key, val) {
+                if (mr.val() == val.venuecode) {
+                    mr.attr('selected', true);
+                    return false;
+                }
+            });
+        });
+
+        $('#functionhalls').hide();
+        $('#mrtimeblock').show();
+    }
+
+    if (@json($time->m) < 1) {
+        $('#prefmr').attr('disabled', true);
+        $('#preffh').attr('disabled', true);
+        $('#timeblock').attr('disabled', true);
+    }
+
+    $('[data-toggle="tooltip"]').tooltip();
     //##################################################################
     // For Applying Select2 on Select Boxes
     //##################################################################
@@ -161,7 +215,125 @@ $(function() {
     $caterer = $('#CatererName').select2({
         tags: true
     });
-    $('#PrefFuncRoom').select2();
+    $('#prefmr').select2();
+    $('#preffh').select2();
+
+    //##################################################################
+    // ON change of Function Room Type
+    //##################################################################
+    $('#funcroomtype').on('change', function() {
+        var selroomtype = $(this).val();
+
+        if (selroomtype == 'FH') {
+            $('#prefmr option:selected').prop('selected', false);
+            $('#prefmr').select2();
+            $('#timeblock').val(null);
+            $('#meetingroomblock').hide();
+            $('#functionhalls').show();
+            $('#prefmr').attr('disabled', true);
+            $('#preffh').attr('disabled', false);
+            
+            if (prefix == 'FH') {
+                $('#timestart').val(reservationinfo.timestart);
+                $('#timeend').val(reservationinfo.timeend);
+            } else {
+                $('#timestart').val('');
+                $('#timeend').val('');
+            }
+            $('#timestart').prop('readonly', false);
+            $('#timeend').prop('readonly', false);
+            
+            $('#preffh option').each(function() {
+                var fh = $(this);
+                
+                $.each(eventvenues, function(key, val) {
+                    if (fh.val() == val.venuecode) {
+                        fh.prop('selected', true);                        
+                        return false;
+                    }
+                });
+            });
+            $('#preffh').select2();
+
+            validate();
+        } else if (selroomtype == 'MR') {
+            $('#preffh option:selected').prop('selected', false);
+            $('#preffh').select2();
+            $('#functionhalls').hide();
+            $('#meetingroomblock').show();
+            $('#mrtimeblock').show();
+            
+            $('#preffh').attr('disabled', true);
+            $('#prefmr').attr('disabled', false);
+        
+            validate();
+        } else {
+            $('#preffh option:selected').prop('selected', false);
+            $('#prefmr option:selected').prop('selected', false);
+            $('#preffh').select2();
+            $('#prefmr').select2();
+            $('#timeblock').val(null);
+            $('#meetingroomblock').hide();
+            $('#functionhalls').hide();
+            $('#prefmr').attr('disabled', true);
+            $('#preffh').attr('disabled', true);
+        
+            validate();
+        }
+    });
+
+    //##################################################################
+    // ON change of Timeblock
+    //##################################################################
+    $('#timeblock').on('change', function() {
+        var seltb = $(this).val();
+        var combos = @JSON($meetrmdiscount);
+        
+        $('#prefmr').empty();
+        $.each($meetingrooms, function(key, val) {
+            $('#prefmr').append('<option data-timestart="'+val.timestart+'" data-timeend="'+val.timeend+'" data-id="'+val.timeblockcode+'" value="'+val.code+'">'+val.name+' || '+val.mincapacity+' - '+val.maxcapacity+' pax</option>');
+        });
+        $.each(combos, function(key, val) {
+            $('#prefmr').append('<option data-timestart="'+val.timestart+'" data-timeend="'+val.timeend+'" data-id="'+val.timeblockcode+'" value="'+val.code+'">'+val.name+' || '+val.mincapacity+' - '+val.maxcapacity+' pax</option>');
+        });
+
+        switch (seltb) {
+            case 'C':
+            case 'F':
+            case 'G':
+                $('#prefmr').attr('multiple', false);
+                // $('#prefmr').select2();
+                break;
+            default:
+                $('#prefmr').attr('multiple', true);
+                // $('#prefmr').select2();
+        }
+
+        $('#prefmr option').each(function() {
+            var mr = $(this);
+            var mrtimeblock = $(this).data('id');
+            
+            if (seltb != mrtimeblock) {
+                // mr.attr('disabled', true);
+                mr.remove();
+            }
+        });
+
+        $('#prefmr').val(null);
+        $('#prefmr').select2();
+
+        $('#timestart').val($('#timeblock :selected').data('timestart'));
+        $('#timestart').prop('readonly', true);
+        $('#timeend').val($('#timeblock :selected').data('timeend'));
+        $('#timeend').prop('readonly', true);
+
+        if (seltb == '' || seltb == null) {
+            $('#prefmr').attr('disabled', true);
+        } else {
+            updateFunctionRooms($('#EventDate').val());
+            $('#prefmr').attr('disabled', false);
+        }
+    });
 
     //##################################################################
     // Disable submit button until every 'required' field has value
@@ -176,33 +348,6 @@ $(function() {
         }
     });
     $('#consent').change(validate);
-
-    //##################################################################
-    // Select only from one option group for Function Rooms
-    //##################################################################
-    $preffuncroom = $('#PrefFuncRoom').select2();
-    $preffuncroom.on('change', function (event) {
-        var seloptgroup = $('#PrefFuncRoom :selected:last').parent().attr('label');
-
-        $('#PrefFuncRoom optgroup').each(function() {
-            if (typeof seloptgroup === 'undefined') {
-                $('#PrefFuncRoom optgroup[label="'+$(this).attr('label')+'"]').each(function() {
-                    $(this).find('option').prop('disabled', false);
-                })
-
-                $('#PrefFuncRoom').select2('destroy');
-                $('#PrefFuncRoom').select2();
-            }
-            else if ($(this).attr('label') != seloptgroup) {
-                $('#PrefFuncRoom optgroup[label="'+$(this).attr('label')+'"]').each(function() {
-                    $(this).find('option').prop('disabled', true);
-                })
-
-                $('#PrefFuncRoom').select2('destroy');
-                $('#PrefFuncRoom').select2();
-            }
-        });
-    });
 
     //##################################################################
     // Dynamic Radio Button that sees if Catererer selected is Accredited
@@ -326,12 +471,14 @@ function updateFunctionRooms(date) {
             reservationid: @json($reservation->id)
         },
         success: function(data) {
-            console.log(data);
-            $('#PrefFuncRoom option').each(function(){ 
+            $('#prefmr option').each(function(){ 
+                $(this).prop('disabled', false);
+            });
+            $('#preffh option').each(function(){ 
                 $(this).prop('disabled', false);
             });
 
-            $('#PrefFuncRoom option').each(function(){
+            $('#preffh option').each(function(){ 
                 room = $(this);
 
                 $.each(data, function(key, val) {
@@ -341,18 +488,21 @@ function updateFunctionRooms(date) {
                     }
                 });
             });
+            $('#prefmr option').each(function(){ 
+                room = $(this);
 
-            var seloptgroup = $('#PrefFuncRoom :selected:last').parent().attr('label');
-            $('#PrefFuncRoom option').each(function() {
-                if ($('#PrefFuncRoom :selected:last').val() == undefined) {
-                    return false;
-                }
-                else if ($(this).parent().attr('label') != seloptgroup) {
-                    $(this).prop('disabled', true);
-                }
+                $.each(data, function(key, val) {
+                    if (room.val().includes(val.venuecode) && room.data('timestart') == val.timestart && room.data('timeend') == val.timeend) {
+                        room.prop('disabled', true);
+                        room.prop('selected', false);
+                    }
+                });
             });
-            $('#PrefFuncRoom').select2('destroy');
-            $('#PrefFuncRoom').select2();
+
+            $('#preffh').select2('destroy');
+            $('#preffh').select2();
+            $('#prefmr').select2('destroy');
+            $('#prefmr').select2();
         }
     });
 }
@@ -438,14 +588,27 @@ function computePrice (equipment_id, src) {
     var total = 0;
     var grandTotal = 0;
 
+    if (diff <= 0) {
+        diff = 24 + diff;
+    }
+
     $.each(equipmentlist, function(key, val) {
         if (val.id == equipment_id) {
             if (diff >= 1.0 && diff <= 5.0) {
                 equipmentrate = val.halfdayrate;
                 total = qtyequipment * equipmentrate;
-            } else if (diff > 5.0 && diff < 10.0) {
+            } else if (diff > 5.0) {
                 equipmentrate = val.wholedayrate;
                 total = qtyequipment * equipmentrate;
+
+                if (diff > 10.0) {
+                    if (val.wholedayrate == val.halfdayrate && val.halfdayrate == val.hourlyexcessrate) {
+                        return false;
+                    } else {
+                        total += (diff - 10) * val.hourlyexcessrate;
+                        console.log(total);
+                    }
+                }
             }
 
             return false;

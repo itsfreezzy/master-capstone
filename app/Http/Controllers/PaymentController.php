@@ -11,6 +11,8 @@ use Auth;
 use Illuminate\Support\Facades\DB;
 use App\Mail\PaymentVerified;
 use App\Mail\PaymentRejected;
+use App\Mail\SlotTaken;
+use App\EventVenue;
 
 class PaymentController extends Controller
 {
@@ -31,12 +33,35 @@ class PaymentController extends Controller
     public function confirm($id)
     {
         $payment = Payment::find($id);
+        $eventvenues = array();
         if ($payment->paymenttype == 'Reservation Fee') {
             $payment->status = 'Confirmed';
 
             $reservation = Reservation::where('code', $payment->reservationcode)->first();
             $reservation->status = 'Confirmed';
             $reservation->approvedby = Auth::id();
+
+            foreach (EventVenue::where('reservationcode', $reservation->code)->get() as $ev) {
+                array_push($eventvenues, $ev->venuecode);
+            }
+            
+            $reservationsToBeCancelled = Reservation::join('tbleventvenue', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
+                ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                ->select('tblreservations.code', 'tblreservations.eoemail', 'tblcustomers.email as custemail')
+                ->whereIn('tbleventvenue.venuecode', $eventvenues)
+                ->where('tblreservations.eventdate', $reservation->eventdate)
+                ->groupBy('tblreservations.code', 'tblreservations.eoemail', 'custemail')
+                ->where('reservationcode', '!=', $reservation->code)
+                ->get();
+            
+            foreach ($reservationsToBeCancelled as $res) {
+                \Mail::to($res->custemail)->cc($res->eoemail)->send(new SlotTaken($res));
+                $event = Reservation::where('code', $res->code)->first();
+                $event->cancelGrounds = 'Slot Taken';
+                $event->status = "Cancelled";
+                $event->save();
+                $event->delete();
+            }
             
             $payment->save();
             $reservation->save();

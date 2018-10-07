@@ -5,7 +5,11 @@ We have received and verified your {{ $payment->paymenttype }} payment with the 
 <strong>Event Title:</strong> {{ $reservation->code }} - {{ $reservation->eventtitle }} <br>
 <strong>Event Date :</strong> {{ date('F d, Y', strtotime($reservation->eventdate)) }} <br>
 
-You still have a balance of <strong>P{{ number_format($reservation->balance, 2) }}</strong>. Please pay the remaining balance 2 weeks before or earlier prior to the event date.
+@if ($payment->paymenttype == '50% Downpayment')
+You can now proceed to the UNILAB Bayanihan Center for the Contract Signing. <br>
+@endif
+
+You still have a balance of <strong>P{{ number_format($reservation->balance, 2) }}</strong>. Please pay the remaining balance 2 weeks before or earlier prior to the event date. <br>
 
 Thanks,<br>
 {{ config('app.name') }}<br><br>

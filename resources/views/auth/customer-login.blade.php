@@ -7,7 +7,7 @@ Sign in | Bayanihan Center
 @section('content')
 <div class="login-box">
     <div class="login-logo">
-        <a href="#"><b>Bayanihan</b>Center</a>
+        <a href="/"><b>Bayanihan</b>Center</a>
     </div>
 
     <!-- /.login-logo -->

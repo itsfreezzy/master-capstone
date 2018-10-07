@@ -11,7 +11,7 @@ class MeetingRoomController extends Controller
 {
     public function index()
     {
-        $meetingrooms = MeetingRoom::withTrashed()->orderBy('created_at', 'DESC')->get();
+        $meetingrooms = MeetingRoom::withTrashed()->where('name', 'not like', '%old%')->orderBy('created_at', 'DESC')->get();
         $timeblocks = TimeBlock::all();
 
         return view('admin.meeting-rooms')->with([

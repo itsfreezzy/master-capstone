@@ -21,11 +21,13 @@ class ReservationController extends Controller
 {
     public function index()
     {
-        $reservations = Reservation::join('tblcustomers', 'tblcustomers.code', '=', 'tblreservations.customercode')
+        $reservations = Reservation::withTrashed()
+                            ->join('tblcustomers', 'tblcustomers.code', '=', 'tblreservations.customercode')
                             ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
                             ->select('tblreservations.*', 'tblcustomers.name', 'tblreservationinfo.*')
                             ->orderBy('tblreservations.created_at', 'DESC')
                             ->get();
+                            
         $reservationcontacts = ReservationContact::all();
         $customers = Customer::all();
 

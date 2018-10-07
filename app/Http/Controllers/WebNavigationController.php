@@ -81,7 +81,7 @@ class WebNavigationController extends Controller
         $pendingreservations = Reservation::where('status', 'Pending')->count();
         $timeblocks = Timeblock::all();
         $funchalls = FunctionHall::all();
-        $meetrooms = MeetingRoom::all();
+        $meetrooms = MeetingRoom::where('name', 'not like', '%old%')->get();
         $meetrmdiscount = DB::table('tblmeetroomdiscount')->get();
         $fhdiscount = DB::table('tblfunchallsdiscount')->get();
 
@@ -100,6 +100,13 @@ class WebNavigationController extends Controller
         }
 
         $calendar = \Calendar::addEvents($events)
+                ->setOptions([
+                    'header' => [
+                        'left' => 'today prev,next',
+                        'center' => 'title',
+                        'right' => 'month, agendaWeek',
+                    ],
+                ])
                 ->setCallbacks([
                     'dayClick' => 'function(date, jsEvent, view) {
                         var date = new Date(date);
@@ -294,7 +301,7 @@ class WebNavigationController extends Controller
             $date = date('Y-m-d', strtotime($request->date));
             $reservedfunchalls = DB::table('tbleventvenue')
                                 ->join('tblreservations', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
-                                ->where('tblreservations.status', 'like', 'Confirmed')
+                                // ->where('tblreservations.status', 'like', 'Confirmed')
                                 ->where('tblreservations.eventdate', $date)
                                 ->where('tbleventvenue.venuecode', 'like', 'FH%')
                                 ->get();

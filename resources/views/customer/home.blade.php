@@ -63,6 +63,7 @@ RESERVATIONS | CLIENT - UNILAB Bayanihan Center
                                         <td>
                                             <div class="btn-group">
                                             <a class="btn btn-default" href="{{ route('client.show.reservationinfo', ['id' => $reservation->id]) }}" type="button" title="View Reservation Information"><i class="fa fa-eye"></i></a>
+                                            @if (!$reservation->trashed())
                                             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                                                 <span class="caret"></span>
                                                 <span class="sr-only">Toggle Dropdown</span>
@@ -76,7 +77,9 @@ RESERVATIONS | CLIENT - UNILAB Bayanihan Center
                                                 @if ($reservation->hasBilling) --}}
                                                 <li><a href="{{ route('client.print.billing-statement', ['id' => $reservation->id]) }}" target="_blank" >View Initial Billing Statement</a></li>
                                             </ul>
+                                            @endif
                                             @if ($reservation->isDone)
+                                            @elseif ($reservation->trashed())
                                             @elseif (date_diff(date_create($reservation->eventdate), date_create(date('Y-m-d')))->invert == 0)
                                             <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalMarkAsDone{{$reservation->id}}" title="Mark Event/Reservation as Done"> <i class="fa fa-check"></i></button>
                                             @elseif ($reservation->status == "Pending" || $reservation->status == "Confirmed")

@@ -26,8 +26,8 @@ This email serves as proof that we have received your reservation. Here are the 
 | Mobile No. | @foreach($reservationcontacts as $rc) {{$rc->mobno}} &nbsp;&nbsp; @endforeach |
 | Email | @foreach($reservationcontacts as $rc) {{$rc->email}} &nbsp;&nbsp; @endforeach |
 @endcomponent
-{{-- PAYMENT TERMS --}}
 
+{{-- PAYMENT TERMS --}}
 <h5><strong>PAYMENT TERMS</strong></h5>
 <ul>
     <li>Reservation Fee - PhP 5,000 (paid upon confirmation, Non-refundable)</li>
@@ -55,7 +55,7 @@ This email serves as proof that we have received your reservation. Here are the 
     <li>Any damages done to the function rooms shall be the accountability of the organizer. Corresponding charges shall be billed to and paid by the organizers.</li>
 </ul><br>
 
-<br> Please pay the Reservation Fee of PhP 5,000 to confirm your reservation slot ASAP. <br><br>
+@if ($hascontest) <strong>You have competition for your desired venue/s.</strong> @endif Please pay the Reservation Fee of PhP 5,000 to confirm your reservation slot ASAP. <br><br>
 As for the guidelines for paying the fees related to the reservation, you can pay at any bank (Bank of the Philippine Island preferrably): <br>
 <strong>Account Name: United Laboratories Inc.</strong> <br>
 <strong>Account Number: 0183-3481-67 - Bank of the Philippine Island</strong> <br><br>

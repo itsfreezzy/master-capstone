@@ -41,14 +41,10 @@ Bayanihan Center | User Log
                     <tbody>
                         @foreach ($userlogs as $userlog)
                         <tr>
-                            @foreach($users as $user)
-                            @if ($userlog->userid = $user->id)
-                            <td>{{ $user->fullname }}</td>
-                            <td>{{ $user->usertype }}</td>
-                            @endif
-                            @endforeach
-                            <td>{{$userlog->action}}</td>
-                            <td>{{date_format(date_create($userlog->date), 'D, M d, Y h:i:s A')}}</td>
+                            <td>{{ $userlog->fullname }}</td>
+                            <td>{{ $userlog->usertype }}</td>
+                            <td>{{ $userlog->action}}</td>
+                            <td>{{ date_format(date_create($userlog->date), 'D, M d, Y h:i:s A' )}}</td>
                         </tr>
                         @endforeach
                     </tbody>

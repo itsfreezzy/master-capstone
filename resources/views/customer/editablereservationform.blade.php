@@ -20,7 +20,7 @@
             <div class="form-group">
                 <label for="EventDate" class="control-label col-sm-2">Date of Event:*</label>
                 <div class="col-sm-10">
-                    <input style="width: 93%" type="date" name="EventDate" id="EventDate" class="form-control form-horizontal" value="{{ date('Y-m-d', strtotime($reservation->eventdate)) }}" required>
+                    <input style="width: 93%" type="date" name="EventDate" id="EventDate" class="form-control form-horizontal" value="{{ date('Y-m-d', strtotime($reservation->eventdate)) }}" {{ $time->m < 1 ? 'readonly' : '' }} required>
                 </div>
 
                 @if ($errors->has('EventDate'))
@@ -28,7 +28,7 @@
                         <span style="color: red" role="alert">
                             <strong>{{ $errors->first('EventDate') }}</strong>
                         </span>
-                    </div>
+                    </div> 
                 @endif
             </div>
         </div>
@@ -56,6 +56,64 @@
             <div class="form-group">
                 <label for="PrefFuncRoom" class="control-label col-sm-2">Preferred Function Room/s:*</label>
                 <div class="col-sm-10">
+                    <select style="width: 93%" id="funcroomtype" class="form-control form-horizontal" {{ $time->m < 1 ? 'disabled' : '' }} >
+                        <option value="">SELECT DESIRED FUNCTION ROOM TYPE</option>
+                        <option value="FH">Function Hall</option>
+                        <option value="MR">Meeting Room</option>
+                    </select>
+                </div>
+
+                @if ($errors->has('PrefFuncRooms'))
+                    <div class="col-sm-10 col-sm-offset-2 error">
+                        <span style="color: red" role="alert">
+                            <strong>{{ $errors->first('PrefFuncRooms') }}</strong>
+                        </span>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="row" id="functionhalls">
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <select {{ $time->m < 1 ? 'disabled' : '' }} name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="preffh" class="form-control form-horizontal" multiple required>
+                        @foreach ($functionhalls as $functionhall)
+                        <option value="{{ $functionhall->code }}">{{ $functionhall->name }} || {{ $functionhall->mincapacity }} - {{ $functionhall->maxcapacity }} pax</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="meetingroomblock">
+            <div class="form-group" id="mrtimeblock">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <select style="width: 93%" id="timeblock" class="form-control form-horizontal" {{ $time->m < 1 ? 'disabled' : '' }}>
+                        <option value="">SELECT DESIRED TIMEBLOCK</option>
+                        @foreach ($timeblocks as $tb)
+                        <option value="{{ $tb->code }}" data-timestart="{{ $tb->timestart }}" data-timeend="{{ $tb->timeend }}">{{ $tb->code }} | {{ date('h:i:s A', strtotime($tb->timestart)) }} - {{ date('h:i:s A', strtotime($tb->timeend)) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" id="meetingrooms">
+                <div class="col-sm-offset-2 col-sm-10" {{ $time->m < 1 ? 'readonly' : '' }}>
+                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="prefmr" class="form-control form-horizontal" multiple required>
+                        @foreach ($meetingrooms as $meetingroom)
+                        <option data-id="{{ $meetingroom->timeblockcode }}" value="{{ $meetingroom->code }}">{{ $meetingroom->name }} || {{ $meetingroom->mincapacity }} - {{ $meetingroom->maxcapacity }} pax</option>
+                        @endforeach
+                        @foreach ($meetrmdiscount as $mr)
+                        <option data-id="{{ $mr->timeblockcode }}" value="{{ $mr->code }}">{{ $mr->name }} || {{ $mr->mincapacity }} - {{ $mr->maxcapacity }} pax</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+        {{-- <div class="row">
+            <div class="form-group">
+                <label for="PrefFuncRoom" class="control-label col-sm-2">Preferred Function Room/s:*</label>
+                <div class="col-sm-10">
                     <select name="PrefFuncRooms[]" style="width: 93%" id="PrefFuncRoom" class="form-control form-horizontal" multiple>
                         <optgroup label="Function Halls">   
                             @foreach ($functionhalls as $functionhall)
@@ -78,7 +136,7 @@
                     </div>
                 @endif
             </div>
-        </div>
+        </div> --}}
 
         {{--  Caterer  --}}
         <div class="row">
@@ -161,12 +219,12 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Start Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="TimeStart" id="timestart" class="form-control form-horizontal" value="{{ $reservationinfo->timestart }}" required>
+                        <input style="" type="time" name="TimeStart" id="timestart" class="form-control form-horizontal" value="{{ $reservationinfo->timestart }}" {{ $prefix == 'MR' ? 'readonly' : '' }} required>
                     </div>
 
                     <p class="control-label col-sm-2">End Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="TimeEnd" id="timeend" class="form-control form-horizontal" value="{{ $reservationinfo->timeend }}" required>
+                        <input style="" type="time" name="TimeEnd" id="timeend" class="form-control form-horizontal" value="{{ $reservationinfo->timeend }}" {{ $prefix == 'MR' ? 'readonly' : '' }} required>
                     </div>
                 </div>
                 
@@ -586,7 +644,8 @@
 
         {{--  Consent  --}}
         <div class="row" style="pading-top: 0px">
-            <div class="col-sm-offset-2">
+            <div class="col-sm-2">@captcha()</div>
+            <div class="col-sm-offset-4">
                 <label class="" ><input name="consent" type="checkbox" id="consent"> I/We fully understand the <a href="" data-toggle="modal" data-target="#modalGuidelines">Bayanihan Center Guidelines</a> and we'll abide by its rules and regulations.</label>
             </div>
         </div>

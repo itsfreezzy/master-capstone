@@ -87,11 +87,9 @@ class AdminNavigationController extends Controller
 
     public function userlog()
     {
-        $userlogs = UserLog::all();
-        $users = User::all();
+        $userlogs = UserLog::join('users', 'users.id', '=', 'userlog.userid')->get();
         return view('admin.user-log')->with([
             'userlogs' => $userlogs,
-            'users' => $users,
         ]);
     }
 

@@ -55,9 +55,10 @@ Bayanihan Center | Reservations
                                 @elseif ($reservation->status == "Confirmed")
                                 <span class="label label-primary">{{ $reservation->status }}</span>
                                 @elseif ($reservation->status == "Done")
-                                <span class="label label-success">{{ $reservation->status }}</span>
+                                <span class="label label-success">{{ $reservation->status }}</span><br>
                                 @elseif ($reservation->status == "Cancelled")
-                                <span class="label label-danger">{{ $reservation->status }}</span>
+                                <span class="label label-danger">{{ $reservation->status }}</span><br>
+                                {{ $reservation->cancelGrounds }}
                                 @endif
                             </td>
                             <td>

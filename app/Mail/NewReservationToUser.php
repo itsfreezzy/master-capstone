@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class NewReservationToUser extends Mailable
 {
     use Queueable, SerializesModels;
-    public $reservation, $customer, $reservationinfo, $eventvenues, $eventequips, $reservationcontacts;
+    public $reservation, $customer, $reservationinfo, $eventvenues, $eventequips, $reservationcontacts, $hascontest;
 
     /**
      * Create a new message instance.
@@ -33,6 +33,20 @@ class NewReservationToUser extends Mailable
         }
         $this->eventequips = EventEquipment::where('reservationcode', $reservation->code)->get();
         $this->reservationcontacts = ReservationContact::where('reservationcode', $reservation->code)->get();
+
+        $eventvenues = array();
+        foreach (EventVenue::where('reservationcode', $reservation->code)->get() as $ev) {
+            array_push($eventvenues, $ev->venuecode);
+        }
+
+        $this->hascontest = Reservation::join('tbleventvenue', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
+                            ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                            ->select('tblreservations.code', 'tblreservations.eoemail', 'tblcustomers.email as custemail')
+                            ->whereIn('tbleventvenue.venuecode', $eventvenues)
+                            ->where('tblreservations.eventdate', $reservation->eventdate)
+                            ->groupBy('tblreservations.code', 'tblreservations.eoemail', 'custemail')
+                            ->where('reservationcode', '!=', $reservation->code)
+                            ->exists();
     }
 
     /**

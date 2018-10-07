@@ -113,7 +113,6 @@ Bayanihan Center | Reports
 			<div class="box-body">
 				{{-- {!! $resperstatchart->container() !!} --}}
 			</div>
-            </div>
         </div>
     </div>
 </div>

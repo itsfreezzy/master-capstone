@@ -34,7 +34,7 @@ Schedules - UNILAB Bayanihan Center
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close-btn"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title"><i class="fa fa-edit"></i> Edit</h4>
+                <h4 class="modal-title"><i class="fa fa-eye"></i> Check Available Rooms</h4>
             </div>
 
             <form action="">
@@ -58,10 +58,10 @@ Schedules - UNILAB Bayanihan Center
                     <label for="" >Available Function Hall(s):</label>
                     <ul id="funchalllist">
                         @foreach ($funchalls as $fhall)
-                        <li data-id="{{ $fhall->code }}">{{ $fhall->name }}</li>
+                        <li data-id="{{ $fhall->code }}">{{ $fhall->name }} || {{ $fhall->mincapacity }} - {{ $fhall->maxcapacity }} pax</li>
                         @endforeach
                         @foreach ($fhdiscount as $fh) 
-                        <li data-id="{{ $fh->code }}" >{{ $fh->name }}</li>
+                        <li data-id="{{ $fh->code }}" >{{ $fh->name }} || {{ $fh->mincapacity }} - {{ $fh->maxcapacity }} pax</li>
                         @endforeach
                     </ul>
                 </div>
@@ -80,10 +80,10 @@ Schedules - UNILAB Bayanihan Center
                         <label for="">Available Meeting Room(s):</label>
                         <ul id="meetroomlist">
                             @foreach ($meetrooms as $mroom)
-                            <li data-id="{{ $mroom->code }}" data-tbcode="{{ $mroom->timeblockcode }}">{{ $mroom->name }}</li>
+                            <li data-id="{{ $mroom->code }}" data-tbcode="{{ $mroom->timeblockcode }}">{{ $mroom->name }} || {{ $mroom->mincapacity }} - {{ $mroom->maxcapacity }} pax</li>
                             @endforeach
                             @foreach ($meetrmdiscount as $mr) 
-                            <li data-id="{{ $mr->code }}" data-tbcode="{{ $mr->timeblockcode }}">{{ $mr->name }}</li>
+                            <li data-id="{{ $mr->code }}" data-tbcode="{{ $mr->timeblockcode }}">{{ $mr->name }} || {{ $mr->mincapacity }} - {{ $mr->maxcapacity }} pax</li>
                             @endforeach
                         </ul>
                     </div>
@@ -144,8 +144,11 @@ $(function () {
                         }
 
                         $.each(funchalls, function(index, fhall){
-                            if (id.includes(fhall.venuecode)) {
+                            if (id.includes(fhall.venuecode) && fhall.status == 'Confirmed') {
                                 elem.wrap('<strike>');
+                                return false;
+                            } else if (id.includes(fhall.venuecode) && fhall.status == 'Pending') {
+                                elem.wrap('<i>');
                                 return false;
                             }
                         });
@@ -183,7 +186,7 @@ $(function () {
 
                                     $.each(meetrooms, function(index, mroom){
                                         if (meetroom.data('id').includes(mroom.venuecode)) {
-                                            elem.wrap('<strike>');
+                                            meetroom.wrap('<strike>');
                                             return false;
                                         }
                                     });

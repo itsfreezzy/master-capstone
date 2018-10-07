@@ -54,8 +54,8 @@ class CustomerRegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => 'required|string|max:150|unique:tblcustomers,name',
-            'username' => 'required|string|max:50|unique:tblcustomers,username',
+            'name' => 'required|string|regex:/^[\pL\s]+$/u|max:150|unique:tblcustomers,name',
+            'username' => 'required|string|alpha_dash|max:50|unique:tblcustomers,username',
             'email' => 'required|string|email|max:191|unique:tblcustomers,email',
             'type' => 'required|',
             'password' => 'required|string|min:5|confirmed',
@@ -103,7 +103,7 @@ class CustomerRegisterController extends Controller
     {
         $response = $captcha->check($request);
         if (! $response->isVerified()) {
-            return redirect()->route('client.register')->with(['error' => $response->errors()]);
+            return redirect()->route('client.register')->with(['error' => 'Error verifying captcha. Please try again.']);
         }
 
         $validator = $this->validator($request->all());

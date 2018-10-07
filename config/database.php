@@ -53,11 +53,11 @@ return [
             'strict' => true,
             'engine' => null,
             'dump' => [
-                'dump_binary_path' => '/path/to/the/binary', // only the path, so without `mysqldump` or `pg_dump`
+                'dump_binary_path' => 'C:\xampp\mysql\bin', // only the path, so without `mysqldump` or `pg_dump`
                 'use_single_transaction',
                 'timeout' => 60 * 5, // 5 minute timeout
-                'exclude_tables' => ['table1', 'table2'],
-                'add_extra_option' => '--optionname=optionvalue', 
+                'exclude_tables' => ['migrations', 'notifications', 'password_resets'],
+                // 'add_extra_option' => '--optionname=optionvalue', 
              ] 
         ],
 

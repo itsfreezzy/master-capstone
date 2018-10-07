@@ -55,17 +55,10 @@
             <div class="form-group">
                 <label for="PrefFuncRoom" class="control-label col-sm-2">Preferred Function Room/s:*</label>
                 <div class="col-sm-10">
-                    <select name="PrefFuncRooms[]" style="width: 93%" id="PrefFuncRoom" class="form-control form-horizontal" multiple required>
-                        <optgroup label="Function Halls">   
-                            @foreach ($functionhalls as $functionhall)
-                            <option value="{{ $functionhall->code }}">{{ $functionhall->name }} || {{ $functionhall->mincapacity }} - {{ $functionhall->maxcapacity }} pax</option>
-                            @endforeach
-                        </optgroup>
-                        <optgroup label="Meeting Rooms">    
-                            @foreach ($meetingrooms as $meetingroom)
-                            <option data-id="{{ $meetingroom->timeblockcode }}" value="{{ $meetingroom->code }}">{{ $meetingroom->name }} || {{ $meetingroom->mincapacity }} - {{ $meetingroom->maxcapacity }} pax</option>
-                            @endforeach
-                        </optgroup>
+                    <select style="width: 93%" id="funcroomtype" class="form-control form-horizontal" >
+                        <option value="">SELECT DESIRED FUNCTION ROOM TYPE</option>
+                        <option value="FH">Function Hall</option>
+                        <option value="MR">Meeting Room</option>
                     </select>
                 </div>
 
@@ -82,21 +75,35 @@
         <div class="row" id="functionhalls">
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-10">
-                    <select name="PrefFuncRooms[]" style="width: 93%" id="PrefFuncRoom" class="form-control form-horizontal" multiple >
+                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="preffh" class="form-control form-horizontal" multiple required>
                         @foreach ($functionhalls as $functionhall)
-                        <option value="{{ $functionhall->code }}">{{ $functionhall->name }} || {{ $functionhall->mincapacity }} - {{ $functionhall->maxcapacity }} pax</option>
+                        <option data-maxcap="{{ $functionhall->maxcapacity }}" data-mincap="{{ $functionhall->mincapacity }}" value="{{ $functionhall->code }}">{{ $functionhall->name }} || {{ $functionhall->mincapacity }} - {{ $functionhall->maxcapacity }} pax</option>
                         @endforeach
                     </select>
                 </div>
             </div>
         </div>
 
-        <div class="row" id="meetingrooms">
-            <div class="form-group">
+        <div class="row" id="meetingroomblock">
+            <div class="form-group" id="mrtimeblock">
                 <div class="col-sm-offset-2 col-sm-10">
-                    <select name="PrefFuncRooms[]" style="width: 93%" id="PrefFuncRoom" class="form-control form-horizontal" multiple >
+                    <select style="width: 93%" id="timeblock" class="form-control form-horizontal" >
+                        <option value="">SELECT DESIRED TIMEBLOCK</option>
+                        @foreach ($timeblocks as $tb)
+                        <option value="{{ $tb->code }}" data-timestart="{{ $tb->timestart }}" data-timeend="{{ $tb->timeend }}">{{ $tb->code }} | {{ date('h:i:s A', strtotime($tb->timestart)) }} - {{ date('h:i:s A', strtotime($tb->timeend)) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" id="meetingrooms">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="prefmr" class="form-control form-horizontal" multiple required>
                         @foreach ($meetingrooms as $meetingroom)
-                        <option data-id="{{ $meetingroom->timeblockcode }}" value="{{ $meetingroom->code }}">{{ $meetingroom->name }} || {{ $meetingroom->mincapacity }} - {{ $meetingroom->maxcapacity }} pax</option>
+                        <option data-maxcap="{{ $meetingroom->maxcapacity }}" data-mincap="{{ $meetingroom->mincapacity }}" data-id="{{ $meetingroom->timeblockcode }}" value="{{ $meetingroom->code }}">{{ $meetingroom->name }} || {{ $meetingroom->mincapacity }} - {{ $meetingroom->maxcapacity }} pax</option>
+                        @endforeach
+                        @foreach ($meetrmdiscount as $mr)
+                        <option data-id="{{ $mr->timeblockcode }}" data-maxcap="{{ $mr->maxcapacity }}" data-mincap="{{ $mr->mincapacity }}" value="{{ $mr->code }}">{{ $mr->name }} || {{ $mr->mincapacity }} - {{ $mr->maxcapacity }} pax</option>
                         @endforeach
                     </select>
                 </div>
@@ -217,12 +224,12 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Ingress Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="IngressTime" id="" class="form-control form-horizontal" value="{{ old('IngressTime') }}" required>
+                        <input style="" type="time" name="IngressTime" id="" class="form-control form-horizontal" value="{{ old('IngressTime') }}" >
                     </div>
 
                     <p class="control-label col-sm-2">Eggress Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="EggressTime" id="" class="form-control form-horizontal" value="{{ old('EggressTime') }}" required>
+                        <input style="" type="time" name="EggressTime" id="" class="form-control form-horizontal" value="{{ old('EggressTime') }}" >
                     </div>
                 </div>
 
@@ -438,7 +445,7 @@
         <div class="row">
             <div class="form-group">
                 <div class="row">
-                    <p class="control-label col-sm-2" style="margin-left: 1%">Telephone Number:*</p>
+                    <p class="control-label col-sm-2" style="margin-left: 1%">Telephone Number:</p>
                     <div class="col-sm-4">
                         <input type="text" name="primcontactinfo[telno]" id="" class="form-control form-horizontal" >
                     </div>
@@ -508,7 +515,7 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Email:*</p>
                     <div class="col-sm-4">
-                        <input type="text" name="primcontactinfo[email]" id="" class="form-control form-horizontal" required >
+                        <input type="text" name="primcontactinfo[email]" id="" class="form-control form-horizontal" required>
                     </div>
 
                     <p class="control-label col-sm-2">Email:</p>
@@ -573,7 +580,7 @@
         <hr>{{-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}
         {{--  Consent  --}}
         <div class="row" style="pading-top: 0px">
-            <div class="col-sm-2">@captcha(6LcNpG8UAAAAAExOGAo9l2YBqLXDM2VIAoA8z8DI)</div>
+            <div class="col-sm-2">@captcha()</div>
             <div class="col-sm-offset-4">
                 <label class="" ><input name="consent" type="checkbox" id="consent"> I/We fully understand the <a href="" data-toggle="modal" data-target="#modalGuidelines">Bayanihan Center Guidelines</a> and we'll abide by its rules and regulations.</label>
             </div>

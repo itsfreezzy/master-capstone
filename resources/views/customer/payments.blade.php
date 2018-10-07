@@ -143,6 +143,14 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                         <div class="col-sm-7">
                             <input name="paymentamount" id="pmtamt" type="number" class="form-control" value="" autocomplete="off" min="1" step="0.01">
                         </div>
+
+                        @if ($errors->has('paymentamount'))
+                            <div class="col-sm-7 col-sm-offset-4 error">
+                                <span style="color: red" role="alert">
+                                    <strong>{{ $errors->first('paymentamount') }}</strong>
+                                </span>
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Payment Date --}}
@@ -151,6 +159,14 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                         <div class="col-sm-7">
                             <input name="paymentdate" type="date" class="form-control" id="paymentdate" value="" autocomplete="off">
                         </div>
+
+                        @if ($errors->has('paymentdate'))
+                            <div class="col-sm-7 col-sm-offset-4 error">
+                                <span style="color: red" role="alert">
+                                    <strong>{{ $errors->first('paymentdate') }}</strong>
+                                </span>
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Payment Image --}}
@@ -159,6 +175,19 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                         <div class="col-sm-7">
                             <input class="form-control" type="file" name="paymentproof[]" id="paymentproof" multiple>
                         </div>
+
+                        @if ($errors->has('paymentproof.*') || $errors->has('paymentproof'))
+                            <div class="col-sm-7 col-sm-offset-4 error">
+                                <span style="color: red" role="alert">
+                                    <strong>{{ $errors->first('paymentproof') }}</strong>
+                                </span>
+                            </div>
+                            <div class="col-sm-7 col-sm-offset-4 error">
+                                <span style="color: red" role="alert">
+                                    <strong>{{ $errors->first('paymentproof.*') }}</strong>
+                                </span>
+                            </div>
+                        @endif
                     </div>
                     
                     <input type="submit" id="btnsubmit" style="display: none">
@@ -421,6 +450,20 @@ $(function() {
     $('[data-toggle="tooltip"]').tooltip();
     $('#selreservationcode').select2({
         width: '100%'
+    });
+
+    @if (session('showAddModal'))
+        $('#modalCreate').modal('show');
+    @endif
+
+    $('#modalCreate').on('hidden.bs.modal', function(e){
+        selpaymenttype.val('');
+        selpaymenttype.attr('disabled', true);
+        $('#pmtamt').attr('disabled', true);
+        $('#paymentdate').attr('disabled', true);
+        $('#paymentproof').attr('disabled', true);
+        $("#modalCreate .error").remove();
+        $("#modalCreate .modal-body input").val("");
     });
 });
 </script>

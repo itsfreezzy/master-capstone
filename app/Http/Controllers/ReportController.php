@@ -18,7 +18,7 @@ use Validator;
 
 class ReportController extends Controller
 {
-    public function reservation() {  
+    public function reservation() {
         //###############################################################################################################
         // Reservations Per Function Room
         //###############################################################################################################
@@ -342,29 +342,29 @@ class ReportController extends Controller
         //###############################################################################################################
         // Sales Percentage Chart
         //###############################################################################################################
-        $eventnatures = array();
-        $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)->take(5)->get();
+        // $eventnatures = array();
+        // $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)->take(5)->get();
 
-        foreach ($reseventnatureondb as $eventnature) {
-            foreach (explode(",", $eventnature->eventnature) as $events) {
-                $eventnatures[$events] = 0;
-            }
-        }
+        // foreach ($reseventnatureondb as $eventnature) {
+        //     foreach (explode(",", $eventnature->eventnature) as $events) {
+        //         $eventnatures[$events] = 0;
+        //     }
+        // }
 
-        foreach ($eventnatures as $key => $value) {
-            foreach ($reseventnatureondb as $eventnature) {
-                foreach (explode(",", $eventnature->eventnature) as $events) {
-                    if ($key == $events) {
-                        $eventnatures[$key] += 1;
-                    }
-                }
-            }
-        }
+        // foreach ($eventnatures as $key => $value) {
+        //     foreach ($reseventnatureondb as $eventnature) {
+        //         foreach (explode(",", $eventnature->eventnature) as $events) {
+        //             if ($key == $events) {
+        //                 $eventnatures[$key] += 1;
+        //             }
+        //         }
+        //     }
+        // }
 
-        $respereventnaturechart = new SampleChart;
-        foreach ($eventnatures as $key => $value) {
-            $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
-        }
+        // $respereventnaturechart = new SampleChart;
+        // foreach ($eventnatures as $key => $value) {
+        //     $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
+        // }
 
         return view('admin.reports-sales');
     }
