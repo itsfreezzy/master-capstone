@@ -26,35 +26,119 @@ Bayanihan Center | Dashboard
 @include('inc.messages')
 {{--  Information Cards  --}}
 <div class="row">
-<div class="col-lg-6 col-xs-6">
-    <!-- small box -->
-    <div class="small-box bg-aqua">
-        <div class="inner">
-        <h3>{{ $monthreservations }}</h3>
+    <div class="col-lg-4 col-xs-4">
+        <div class="small-box bg-aqua">
+            <div class="inner">
+            <h3>{{ $monthreservations }}</h3>
 
-        <p>Events this month</p>
+            <p>Events this month</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-calendar"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
         </div>
-        <div class="icon">
-        <i class="ion ion-calendar"></i>
-        </div>
-        <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
     </div>
+
+    <div class="col-lg-4 col-xs-4">
+        <div class="small-box bg-green">
+            <div class="inner">
+            <h3>{{ $reservationstoday }}</h3>
+
+            <p>Reservations Today</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-android-more-horizontal"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+        </div>
     </div>
 
-    <div class="col-lg-6 col-xs-6">
-    <!-- small box -->
-    <div class="small-box bg-yellow">
-        <div class="inner">
-        <h3>{{ $pendingreservations }}</h3>
+    <div class="col-lg-4 col-xs-4">
+        <div class="small-box bg-yellow">
+            <div class="inner">
+            <h3>{{ $pendingreservations }}</h3>
 
-        <p>Pencil Reservations</p>
+            <p>Pending Reservations</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-android-more-horizontal"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
         </div>
-        <div class="icon">
-        <i class="ion ion-android-more-horizontal"></i>
-        </div>
-        <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-lg-2 col-xs-6 col-xs-offset-1">
+        <div class="small-box bg-yellow">
+            <div class="inner">
+            <h3>{{ $pendingreservations + $confirmedreservations + $cancelledreservations + $donereservations }}</h3>
+
+            <p>Total Reservations</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-ios-list"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-xs-6">
+        <div class="small-box bg-yellow">
+            <div class="inner">
+            <h3>{{ $pendingreservations }}</h3>
+
+            <p>Pending Reservations</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-ios-help-empty"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-xs-6">
+        <div class="small-box bg-primary">
+            <div class="inner">
+            <h3>{{ $confirmedreservations }}</h3>
+
+            <p>Confirmed Reservations</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-ios-checkmark-empty"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-xs-6">
+        <div class="small-box bg-green">
+            <div class="inner">
+            <h3>{{ $donereservations }}</h3>
+
+            <p>Done Reservations</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-ios-checkmark-empty"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-xs-6">
+        <div class="small-box bg-red">
+            <div class="inner">
+            <h3>{{ $cancelledreservations }}</h3>
+
+            <p>Cancelled Reservations</p>
+            </div>
+            <div class="icon">
+            <i class="ion ion-ios-close-empty"></i>
+            </div>
+            <a href="/admin/reservations" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
 </div>
 
 {{--  Calendar  --}}

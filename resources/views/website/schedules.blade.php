@@ -177,7 +177,7 @@ $(function () {
                                 var meetroom = $(this);
                                 var meetroomtb = $(this).data('tbcode');
 
-                                if (meetroomtb != seltb) {
+                                if (!meetroomtb.includes(seltb)) {
                                     meetroom.hide();
                                 } else {
                                     if (meetroom.parent().get(0).tagName == 'STRIKE') {

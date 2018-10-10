@@ -143,8 +143,7 @@ Bayanihan Center | Reports
 			}
 		});
 
-		$('#daterange-btn').daterangepicker(
-		{
+		$('#daterange-btn').daterangepicker({
 			ranges   : {
 			'Today'       : [moment(), moment()],
 			'Yesterday'   : [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
@@ -156,12 +155,13 @@ Bayanihan Center | Reports
 			},
 			startDate: moment().subtract(29, 'days'),
 			endDate  : moment()
-		},
-		function (start, end) {
+		}, function (start, end) {
 			$('#daterange-btn span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
 			$('#inputrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
 			console.log($('#inputrange').val());
 		})
+		
+		var chart = window.{{ $resperfuncroomchart->id }};
 	});
 </script>
 @endsection

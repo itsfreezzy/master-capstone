@@ -18,15 +18,15 @@
                 <a href="/admin/reservations"><i class="fa fa-calendar"></i> <span>Reservations</span></a>
             </li>
             <li {{ (Request::is('admin/payments') ? 'class=active' : '') }}>
-                <a href="/admin/payments"><i class="fa fa-money"></i> <span>Payments Tracking</span></a>
+                <a href="/admin/payments"><i class="fa fa-money"></i> <span>Payments</span></a>
             </li>
             <li {{ (Request::is('admin/balances') ? 'class=active' : '') }}>
-                <a href="/admin/balances"><i class="fa fa-balance-scale"></i> <span>Balance</span></a>
+                <a href="/admin/balances"><i class="fa fa-balance-scale"></i> <span>Balances</span></a>
             </li>
 
 
             <li class="header"><b>MAINTENANCE</b></li>
-            <li class="{{ (Request::is('admin/maintenance/meeting-rooms') ? 'active' : '') }}{{ (Request::is('admin/maintenance/function-halls') ? 'active' : '') }} treeview">
+            <li class="{{ (Request::is('admin/maintenance/meeting-rooms*') ? 'active' : '') }}{{ (Request::is('admin/maintenance/function-halls*') ? 'active' : '') }} treeview">
                 <a href="#"><i class="fa fa-building"></i> <span>Function Rooms</span>
                     <span class="pull-right-container">
                         <i class="fa fa-angle-left pull-right"></i>
@@ -36,8 +36,14 @@
                     <li {{ (Request::is('admin/maintenance/function-halls') ? 'class=active' : '') }}>
                         <a href="/admin/maintenance/function-halls"><i class="fa fa-circle-o"></i> Function Halls</a>
                     </li>
+                    <li {{ (Request::is('admin/maintenance/function-halls/combo') ? 'class=active' : '') }}>
+                        <a href="/admin/maintenance/function-halls/combo"><i class="fa fa-circle-o"></i> Function Hall Combos</a>
+                    </li>
                     <li {{ (Request::is('admin/maintenance/meeting-rooms') ? 'class=active' : '') }}>
                         <a href="/admin/maintenance/meeting-rooms"><i class="fa fa-circle-o"></i> Meeting Rooms</a>
+                    </li>
+                    <li {{ (Request::is('admin/maintenance/meeting-rooms/combo') ? 'class=active' : '') }}>
+                        <a href="/admin/maintenance/meeting-rooms/combo"><i class="fa fa-circle-o"></i> Meeting Room Combos</a>
                     </li>
                 </ul>
             </li>

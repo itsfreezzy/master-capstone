@@ -188,6 +188,14 @@ Route::prefix('admin')->group(function() {
             Route::delete('/function-halls/{id}/destroy', 'FunctionHallController@destroy')->name('admin.function-halls.destroy');
             Route::patch('/function-halls/{id}/restore', 'FunctionHallController@restore')->name('admin.function-halls.restore');
             Route::post('/function-halls/get', 'FunctionHallController@getFunctionHall'); // AJAX GET ROUTE
+            // Function Hall Combos
+            Route::get('/function-halls/combo', 'FunctionHallController@combo')->name('admin.fhalls-combo.index');
+            Route::post('/function-halls/combo', 'FunctionHallController@comboStore')->name('admin.fhalls-combo.store');
+            Route::put('/function-halls/combo/{id}/edit', 'FunctionHallController@comboUpdate')->name('admin.fhalls-combo.edit');
+            Route::delete('/function-halls/combo/{id}/destroy', 'FunctionHallController@comboDestroy')->name('admin.fhalls-combo.destroy');
+            Route::patch('/function-halls/combo/{id}/restore', 'FunctionHallController@comboRestore')->name('admin.fhalls-combo.restore');
+            Route::post('/function-halls/combo/get', 'FunctionHallController@getFunctionHallCombo'); // AJAX GET ROUTE
+
 
             // Meeting Rooms
             // Route::resource('meeting-rooms', 'MeetingRoomController');
@@ -197,6 +205,13 @@ Route::prefix('admin')->group(function() {
             Route::delete('/meeting-rooms/{id}/destroy', 'MeetingRoomController@destroy')->name('admin.meeting-rooms.destroy');
             Route::patch('/meeting-rooms/{id}/restore', 'MeetingRoomController@restore')->name('admin.meeting-rooms.restore');
             Route::post('/meeting-rooms/get', 'MeetingRoomController@getMeetingRoom'); // AJAX GET ROUTE
+            // Meeting Room Combos
+            Route::get('/meeting-rooms/combo', 'MeetingRoomController@combo')->name('admin.mrooms-combo.index');
+            Route::post('/meeting-rooms/combo', 'MeetingRoomController@comboStore')->name('admin.mrooms-combo.store');
+            Route::put('/meeting-rooms/combo/{id}/edit', 'MeetingRoomController@comboUpdate')->name('admin.mrooms-combo.edit');
+            Route::delete('/meeting-rooms/combo/{id}/destroy', 'MeetingRoomController@comboDestroy')->name('admin.mrooms-combo.destroy');
+            Route::patch('/meeting-rooms/combo/{id}/restore', 'MeetingRoomController@comboRestore')->name('admin.mrooms-combo.restore');
+            Route::post('/meeting-rooms/combo/get', 'MeetingRoomController@getMeetingRoomCombo'); // AJAX GET ROUTE
 
             // Customers
             // Route::resource('customers', 'CustomerController');

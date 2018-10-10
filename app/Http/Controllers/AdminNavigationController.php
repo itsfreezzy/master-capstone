@@ -25,9 +25,29 @@ class AdminNavigationController extends Controller
         $reservationcontacts = ReservationContact::all();
         $customers = Customer::all();
         $pendingreservations = Reservation::where('status', 'Pending')->count();
+        $confirmedreservations = Reservation::where('status', 'Confirmed')->count();
+        $donereservations = Reservation::where('status', 'Done')->count();
+        $cancelledreservations = Reservation::withTrashed()->where('status', 'Cancelled')->count();
+        $reservationstoday = Reservation::whereBetween('datefiled', [(date('Y-m-d') . ' 00:00:00'), (date('Y-m-d' . ' 23:59:59'))])->count();
 
         $events = [];
+        $colors = [];
         foreach ($reservations as $reservation) {
+            switch($reservation->status) {
+                case 'Pending':
+                    $color = '#f9f9f9';// array_push($colors, '#f9f9f9');
+                    break;
+                case 'Confirmed':
+                    $color = '#428bca';// array_push($colors, '#428bca');
+                    break;
+                case 'Done':
+                    $color = '#5cb85c';// array_push($colors, '#5cb85c');
+                    break;
+                case 'Cancelled':
+                    $color = '#d9534f';// array_push($colors, '#d9534f');
+                    break;
+            }
+
             $events[] = \Calendar::event(
                 $reservation->eventtitle,
                 false,
@@ -36,6 +56,7 @@ class AdminNavigationController extends Controller
                 $reservation->id,
                 [
                     'url' => '/admin/reservations/view/' . $reservation->id,
+                    'color' => $color
                 ]
             );
         }
@@ -48,10 +69,14 @@ class AdminNavigationController extends Controller
             'customers' => $customers,
             'calendar' => $calendar,
             'pendingreservations' => $pendingreservations,
+            'confirmedreservations' => $confirmedreservations,
+            'donereservations' => $donereservations,
+            'cancelledreservations' => $cancelledreservations,
             'monthreservations' => $this->thisMonthReservations(),
             'functionhalls' => $functionhalls,
             'meetingrooms' => $meetingrooms,
             'eventvenues' => $eventvenues,
+            'reservationstoday' => $reservationstoday,
         ]);
     }
 
@@ -113,5 +138,13 @@ class AdminNavigationController extends Controller
     public function getCustomer(Request $request)
     {
         return Customer::withTrashed()->where('id', $request->id)->firstOrFail();
+    }
+
+    function random_color_part() {
+        return str_pad( dechex( mt_rand( 0, 255 ) ), 2, '0', STR_PAD_LEFT);
+    }
+    
+    function random_color() {
+        return '#' . $this->random_color_part() . $this->random_color_part() . $this->random_color_part();
     }
 }

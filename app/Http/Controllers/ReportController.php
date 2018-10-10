@@ -59,7 +59,7 @@ class ReportController extends Controller
             array_push($colors, $this->random_color());
         }
         $resperfuncroomchart->labels($funcrooms);
-        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->color($this->random_color());
+        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings, $colors)->backgroundColor($colors);
 
 
         //###############################################################################################################
@@ -83,11 +83,18 @@ class ReportController extends Controller
             }
         }
 
+        $en = array();
+        $res = array();
+        $colors = array();
         $respereventnaturechart = new SampleChart;
         foreach ($eventnatures as $key => $value) {
-            $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
+            array_push($en, $key);
+            array_push($res, $value);
+            array_push($colors, $this->random_color()); 
         }
-
+        
+        $respereventnaturechart->labels($en);
+        $respereventnaturechart->dataset($key, 'pie', $res)->backgroundColor($colors);
 
         //###############################################################################################################
         // Reservations Per Status
@@ -99,16 +106,19 @@ class ReportController extends Controller
 
         $status = array();
         $bookings = array();
+        $colors = array();
         
         foreach ($resstatondb as $q) {
             array_push($status, $q->status);
-            array_push($bookings, $q->ctr);   
+            array_push($bookings, $q->ctr);
+            array_push($colors, $this->random_color()); 
         }
 
         $resperstatchart = new SampleChart;
         $resperstatchart->displayAxes(false);
         $resperstatchart->labels($status);
-        $resperstatchart->dataset('SAMPLE', 'pie', $bookings)->color($this->random_color());
+        $resperstatchart->dataset('SAMPLE', 'pie', $bookings)->backgroundColor($colors);
+
 
         $en = ReservationInfo::select('eventnature')->get();
         $natures = [];
@@ -137,6 +147,7 @@ class ReportController extends Controller
                 'natures' => $natures,
                 'functionhalls' => $functionhalls,
                 'meetingrooms' => $meetingrooms,
+                'colors' => $colors,
             ]);
         } else {
             return redirect()->back()->with(['error' => 'Insufficient data to access reports.']);
@@ -198,7 +209,7 @@ class ReportController extends Controller
             array_push($colors, $this->random_color());
         }
         $resperfuncroomchart->labels($funcrooms);
-        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->color($this->random_color()); 
+        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings); 
 
 
         //###############################################################################################################
@@ -225,7 +236,7 @@ class ReportController extends Controller
 
         $respereventnaturechart = new SampleChart;
         foreach ($eventnatures as $key => $value) {
-            $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
+            $respereventnaturechart->dataset($key, 'bar', array($value));
         }
         // dd($respereventnaturechart);
 
@@ -250,7 +261,7 @@ class ReportController extends Controller
         $resperstatchart = new SampleChart;
         $resperstatchart->displayAxes(false);
         $resperstatchart->labels($status);
-        $resperstatchart->dataset('SAMPLE', 'pie', $bookings)->color($this->random_color());
+        $resperstatchart->dataset('SAMPLE', 'pie', $bookings);
 
         $en = ReservationInfo::select('eventnature')->get();
         $natures = [];
@@ -382,6 +393,6 @@ class ReportController extends Controller
     }
     
     function random_color() {
-        return $this->random_color_part() . $this->random_color_part() . $this->random_color_part();
+        return '#' . $this->random_color_part() . $this->random_color_part() . $this->random_color_part();
     }
 }

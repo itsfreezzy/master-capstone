@@ -17,6 +17,7 @@ class CreateEventVenuesTable extends Migration
             $table->increments('id');
             $table->string('reservationcode', 20);
             $table->string('venuecode', 20);
+            $table->decimal('totalprice', 8, 2)->nullable();
             $table->timestamps();
         });
     }

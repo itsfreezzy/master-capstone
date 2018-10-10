@@ -74,7 +74,7 @@ class WebNavigationController extends Controller
 
     public function goToSchedules()
     {
-        $reservations = Reservation::join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->where('status', '=', 'Confirmed')->get();
+        $reservations = Reservation::join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->where('status', '=', 'Confirmed')->orWhere('status', '=', 'Pending')->get();
         $reservationcontacts = ReservationContact::all();
         $reservationinfos = ReservationInfo::all();
         $customers = Customer::all();
@@ -87,6 +87,21 @@ class WebNavigationController extends Controller
 
         $events = [];
         foreach ($reservations as $reservation) {
+            switch($reservation->status) {
+                case 'Pending':
+                    $color = '#C0C0C0';// array_push($colors, '#f9f9f9');
+                    break;
+                case 'Confirmed':
+                    $color = '#428bca';// array_push($colors, '#428bca');
+                    break;
+                case 'Done':
+                    $color = '#5cb85c';// array_push($colors, '#5cb85c');
+                    break;
+                case 'Cancelled':
+                    $color = '#d9534f';// array_push($colors, '#d9534f');
+                    break;
+            }
+
             $events[] = \Calendar::event(
                 $reservation->eventtitle,
                 false,
@@ -94,7 +109,7 @@ class WebNavigationController extends Controller
                 $reservation->eventdate . ' ' . $reservation->timeend,
                 $reservation->id,
                 [
-                    // 'url' => '/admin/reservations'
+                    'color' => $color
                 ]
             );
         }
@@ -325,5 +340,13 @@ class WebNavigationController extends Controller
         } else {
             return 'error';
         }
+    }
+
+    function random_color_part() {
+        return str_pad( dechex( mt_rand( 0, 255 ) ), 2, '0', STR_PAD_LEFT);
+    }
+    
+    function random_color() {
+        return '#' . $this->random_color_part() . $this->random_color_part() . $this->random_color_part();
     }
 }

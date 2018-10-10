@@ -250,7 +250,7 @@ $(function() {
             var mr = $(this);
             var mrtimeblock = $(this).data('id');
             
-            if (seltb != mrtimeblock) {
+            if (!mrtimeblock.includes(seltb)) {
                 // mr.attr('disabled', true);
                 mr.remove();
             }
@@ -301,6 +301,72 @@ $(function() {
                 html: 'Number of attendees exceeds the maximum capacity of the venue!<br><strong>Attendees: '+$('#NumAttendees').val()+'</strong><br><strong>Venue Maximum Capacity: '+maxcap+'</strong>',
                 type: 'warning'
             });
+        }
+
+        if ($(this).prop('multiple') === true) {
+            var rooms = null;
+
+            $.each($('#prefmr').val(), function(key, val){
+                if (val.includes('|')) {
+                    rooms = val;
+                    return false;
+                }
+            });
+            
+            if (rooms) {
+                $('#prefmr option').each(function() {
+                    var rmoption = $(this);
+
+                    if (rmoption.val() == '' || rmoption.val() == null) {
+                        return;
+                    } else if (rooms.includes(rmoption.val())) {
+                        if (rooms == rmoption.val()) {
+                            return;
+                        }
+                        rmoption.prop('selected', false);
+                        rmoption.prop('disabled', true);
+                    } else if ( rooms == rmoption.val() ) {
+                        console.log('test');
+                    } else {
+                        rmoption.prop('disabled', false);
+                    }
+                });
+
+                $('#prefmr').select2();
+            } else {
+                $('#prefmr option').each(function() {
+                    if (typeof $(this).data('reserved') !== 'undefined') {
+                        return;
+                    }
+
+                    $(this).prop('disabled', false);
+                });
+
+                var test = $('#prefmr').val().join('|');
+                $('#prefmr option').each(function() {
+                    var opt = $(this);
+
+                    if (test == opt.val()) {
+                        opt.prop('selected', true);
+
+                        $('#prefmr option:selected').each(function() {
+                            var disabling = $(this);
+
+                            if ( test.includes(disabling.val()) ) {
+                                if (test == disabling.val()) {
+                                    return;
+                                }
+                                
+                                disabling.prop('disabled', true);
+                                disabling.prop('selected', false);
+                            }
+                        });
+                        return false;
+                    }
+                });
+
+                $('#prefmr').select2();
+            }
         }
     });
 
@@ -596,6 +662,7 @@ function updateFunctionRooms(date) {
                     if (room.val().includes(val.venuecode) && room.data('timestart') == val.timestart && room.data('timeend') == val.timeend) {
                         room.prop('disabled', true);
                         room.prop('selected', false);
+                        room.attr('data-reserved', '1');
                     }
                 });
             });

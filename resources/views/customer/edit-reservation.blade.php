@@ -336,6 +336,144 @@ $(function() {
     });
 
     //##################################################################
+    // ON change of MR
+    //##################################################################
+    $('#prefmr').on('change', function() {
+        var mincap = null;
+        var maxcap = null;
+
+        $('#prefmr option:selected').each(function() {
+            mincap += $(this).data('mincap');
+            maxcap += $(this).data('maxcap');
+        });
+        
+        // $('#NumAttendees').attr('min', mincap);
+        $('#NumAttendees').attr('max', maxcap + 5);
+
+        if ($('#NumAttendees').val() < maxcap * .50 && $('#NumAttendees').val() != '' && $('#prefmr option:selected').length > 0) {
+            swal({
+                title: 'Warning!',
+                html: 'Number of attendees is less than 50% of the maximum capacity of the venue!<br><strong>Attendees: '+$('#NumAttendees').val()+'</strong><br><strong>Venue Minimum Capacity: '+maxcap+'</strong>',
+                type: 'warning'
+            });
+        }
+
+        if ($('#NumAttendees').val() > maxcap + 5 && $('#prefmr option:selected').length > 0) {
+            swal({
+                title: 'Warning!',
+                html: 'Number of attendees exceeds the maximum capacity of the venue!<br><strong>Attendees: '+$('#NumAttendees').val()+'</strong><br><strong>Venue Maximum Capacity: '+maxcap+'</strong>',
+                type: 'warning'
+            });
+        }
+
+        if ($(this).prop('multiple') === true) {
+            var rooms = null;
+
+            $.each($('#prefmr').val(), function(key, val){
+                if (val.includes('|')) {
+                    rooms = val;
+                    return false;
+                }
+            });
+            
+            if (rooms) {
+                $('#prefmr option').each(function() {
+                    var rmoption = $(this);
+
+                    if (rmoption.val() == '' || rmoption.val() == null) {
+                        return;
+                    } else if (rooms.includes(rmoption.val())) {
+                        if (rooms == rmoption.val()) {
+                            return;
+                        }
+                        rmoption.prop('selected', false);
+                        rmoption.prop('disabled', true);
+                    } else if ( rooms == rmoption.val() ) {
+                        console.log('test');
+                    } else {
+                        rmoption.prop('disabled', false);
+                    }
+                });
+
+                $('#prefmr').select2();
+            } else {
+                $('#prefmr option').each(function() {
+                    if (typeof $(this).data('reserved') !== 'undefined') {
+                        return;
+                    }
+
+                    $(this).prop('disabled', false);
+                });
+
+                var test = $('#prefmr').val().join('|');
+                $('#prefmr option').each(function() {
+                    var opt = $(this);
+
+                    if (test == opt.val()) {
+                        opt.prop('selected', true);
+
+                        $('#prefmr option:selected').each(function() {
+                            var disabling = $(this);
+
+                            if ( test.includes(disabling.val()) ) {
+                                if (test == disabling.val()) {
+                                    return;
+                                }
+                                
+                                disabling.prop('disabled', true);
+                                disabling.prop('selected', false);
+                            }
+                        });
+                        return false;
+                    }
+                });
+
+                $('#prefmr').select2();
+            }
+        }
+    });
+
+    //##################################################################
+    // ON change of FH
+    //##################################################################
+    $('#preffh').on('change', function() {
+        var mincap = null;
+        var maxcap = null;
+
+        $('#preffh option:selected').each(function() {
+            mincap += $(this).data('mincap');
+            maxcap += $(this).data('maxcap');
+        });
+        
+        // $('#NumAttendees').attr('min', mincap);
+        $('#NumAttendees').attr('max', maxcap + 10);
+
+        if ($('#NumAttendees').val() < mincap * .75  && $('#NumAttendees').val() != '' && $('#preffh option:selected').length > 0) {
+            swal({
+                title: 'Warning!',
+                html: '<p style="font-size: 30">Number of attendees is significantly less than the minimum capacity of the venue!<br><strong>Attendees: '+$('#NumAttendees').val()+'</strong><br><strong>Venue Minimum Capacity: '+mincap+'</strong><p>',
+                type: 'warning'
+            });
+        } else if ($('#NumAttendees').val() < mincap * .9) {
+            if ($('#NumAttendees').val() != '' && $('#preffh option:selected').length > 0) {
+                swal({
+                    title: 'Warning!',
+                    html: 'Number of attendees is less than the minimum capacity of the venue!<br><strong>Attendees: '+$('#NumAttendees').val()+'</strong><br><strong>Venue Minimum Capacity: '+mincap+'</strong>',
+                    type: 'warning'
+                });
+            }
+        }
+
+        if ($('#NumAttendees').val() > maxcap + 10 && $('#preffh option:selected').length > 0) {
+            swal({
+                title: 'Warning!',
+                html: 'Number of attendees exceeds the maximum capacity of the venue!<br><strong>Attendees: '+$('#NumAttendees').val()+'</strong><br><strong>Venue Maximum Capacity: '+maxcap+'</strong>',
+                type: 'warning'
+            });
+        }
+    });
+
+    //##################################################################
     // Disable submit button until every 'required' field has value
     //##################################################################
     validate();

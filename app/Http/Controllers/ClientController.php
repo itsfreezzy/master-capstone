@@ -35,9 +35,7 @@ class ClientController extends Controller
         $reservation = Reservation::where([
             ['customercode', '=', Auth::guard('customer')->user()->code],
             ['balance', '<>', '0'],
-            ['status', '<>', 'Pending'],
-            ['status', '<>', 'Done'],
-            ['status', '<>', 'Cancelled']
+            ['status', '=', 'Confirmed']
         ])->get();
 
         $totbal = Reservation::where([
@@ -46,7 +44,7 @@ class ClientController extends Controller
             ['status', '=', 'Confirmed']
         ])->sum('balance');
 
-        $nextevent = Reservation::where('status', '<>', ['Pending', 'Done'])->oldest('eventdate')->first();
+        $nextevent = Reservation::where('status', 'Confirmed')->oldest('eventdate')->where('customercode', Auth::guard('web')->user()->code)->first();
         if ($nextevent) {
             $daystilnextevent = date_diff(date_create($nextevent->eventdate), date_create(now()))->days;
         } else {
@@ -106,15 +104,14 @@ class ClientController extends Controller
     ## New Reservation Functions
     ############################################################################################################################
     public function showReservationForm(){
-        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->where('name', 'not like', '%old%')->get();
+        $meetingrooms = MeetingRoom::join('tbltimeblock', 'tblmeetingrooms.timeblockcode', 'like', DB::raw('CONCAT(tbltimeblock.code, "%")'))->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->where('name', 'not like', '%old%')->get(); //join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetingrooms.timeblockcode')->select('tblmeetingrooms.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->
         $functionhalls = FunctionHall::all();
         $equipments = Equipment::all();
         $eventnatures = EventNature::all();
         $eventsetups = EventSetup::all();
         $caterers = Caterer::all();
         $timeblocks = Timeblock::all();
-        $meetrmdiscount = DB::table('tblmeetroomdiscount')->join('tbltimeblock', 'tbltimeblock.code', '=', 'tblmeetroomdiscount.timeblockcode')->select('tblmeetroomdiscount.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
-
+        $meetrmdiscount = DB::table('tblmeetroomdiscount')->join('tbltimeblock', 'tblmeetroomdiscount.timeblockcode', 'like', DB::raw('CONCAT(tbltimeblock.code, "%")'))->select('tblmeetroomdiscount.*', 'tbltimeblock.timestart', 'tbltimeblock.timeend')->get();
 
         return view('customer.reservation')->with([
             'meetingrooms' => $meetingrooms,
@@ -638,7 +635,7 @@ class ClientController extends Controller
 
     public function showReservationInfo($id)
     {
-        $reservation = Reservation::find($id);
+        $reservation = Reservation::withTrashed()->where('id', $id)->first();
         $reservationinfo = ReservationInfo::where('id', $reservation->reservationinfoid)->first();
         $eventvenues = EventVenue::where('reservationcode', $reservation->code)->get();
         $eventequipments = EventEquipment::where('reservationcode', $reservation->code)->get();
