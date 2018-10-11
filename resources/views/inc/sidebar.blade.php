@@ -77,6 +77,9 @@
             <li {{ (Request::is('admin/reports/sales') ? 'class=active' : '') }}>
                 <a href="/admin/reports/sales"><i class="fa fa-line-chart"></i> <span>Sales Report</span></a>
             </li>
+            <li {{ (Request::is('admin/reports/misc') ? 'class=active' : '') }}>
+                <a href="/admin/reports/misc"><i class="fa fa-line-chart"></i> <span>Misc. Reports</span></a>
+            </li>
 
 
             <li class="header"><b>UTILITIES</b></li>

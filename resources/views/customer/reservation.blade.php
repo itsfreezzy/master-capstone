@@ -598,7 +598,11 @@ $(function() {
         keyup: function() {
             var date = $(this).val();
             updateFunctionRooms(date);
-            // onDateChange();
+            var test = date.split('-');
+            if (test[0] > (new Date).getFullYear()) {
+                test[0] = (new Date).getFullYear();
+                $(this).val(test.join('-'));
+            }
         },
         change: function() {
             var date = $(this).val();

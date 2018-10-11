@@ -253,6 +253,8 @@ Route::prefix('admin')->group(function() {
         Route::post('/reports/sales', 'ReportController@updateSalesReport')->name('admin.reports-sales.update');
         Route::post('/reports/sales/generatepdf', 'ReportController@generateSalesReport')->name('admin.reports-sales.generatepdf');
 
+        Route::get('/reports/misc', 'ReportController@miscIndex')->name('admin.reports.misc');
+
 
         // MISC
         Route::get('/profile', 'AdminNavigationController@goToProfilePage')->name('admin.show.profile');

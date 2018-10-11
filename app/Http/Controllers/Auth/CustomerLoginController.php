@@ -28,6 +28,7 @@ class CustomerLoginController extends Controller
 
     public function login(Request $request)
     {
+        // dd($request->session()->get('url')['intended']);
         // Validate the form data
         $this->validate($request, [
             'username' => 'required',

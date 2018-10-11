@@ -44,7 +44,7 @@ class ClientController extends Controller
             ['status', '=', 'Confirmed']
         ])->sum('balance');
 
-        $nextevent = Reservation::where('status', 'Confirmed')->oldest('eventdate')->where('customercode', Auth::guard('web')->user()->code)->first();
+        $nextevent = Reservation::where('status', 'Confirmed')->oldest('eventdate')->where('customercode', Auth::guard('customer')->user()->code)->first();
         if ($nextevent) {
             $daystilnextevent = date_diff(date_create($nextevent->eventdate), date_create(now()))->days;
         } else {

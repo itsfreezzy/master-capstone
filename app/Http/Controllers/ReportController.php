@@ -388,6 +388,10 @@ class ReportController extends Controller
         //
     }
 
+    public function miscIndex() {
+        return view('admin.reports-misc');
+    }
+
     function random_color_part() {
         return str_pad( dechex( mt_rand( 0, 255 ) ), 2, '0', STR_PAD_LEFT);
     }
