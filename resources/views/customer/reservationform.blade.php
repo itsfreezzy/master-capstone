@@ -55,10 +55,10 @@
             <div class="form-group">
                 <label for="PrefFuncRoom" class="control-label col-sm-2">Preferred Function Room/s:*</label>
                 <div class="col-sm-10">
-                    <select style="width: 93%" id="funcroomtype" class="form-control form-horizontal" >
+                    <select style="width: 93%" id="funcroomtype" class="form-control form-horizontal" name="frtype" value="{{ old('frtype') }}">
                         <option value="">SELECT DESIRED FUNCTION ROOM TYPE</option>
-                        <option value="FH">Function Hall</option>
-                        <option value="MR">Meeting Room</option>
+                        <option value="FH" {{ old('frtype') == 'FH' ? 'selected' : '' }}>Function Hall</option>
+                        <option value="MR" {{ old('frtype') == 'MR' ? 'selected' : '' }}>Meeting Room</option>
                     </select>
                 </div>
 
@@ -72,10 +72,10 @@
             </div>
         </div>
 
-        <div class="row" id="functionhalls">
+        <div class="row" id="functionhalls" style="display:none">
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-10">
-                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="preffh" class="form-control form-horizontal" multiple >
+                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="preffh" class="form-control form-horizontal" multiple disabled >
                         @foreach ($functionhalls as $functionhall)
                         <option data-maxcap="{{ $functionhall->maxcapacity }}" data-mincap="{{ $functionhall->mincapacity }}" value="{{ $functionhall->code }}">{{ $functionhall->name }} || {{ $functionhall->mincapacity }} - {{ $functionhall->maxcapacity }} pax</option>
                         @endforeach
@@ -84,10 +84,10 @@
             </div>
         </div>
 
-        <div class="row" id="meetingroomblock">
-            <div class="form-group" id="mrtimeblock">
+        <div class="row" id="meetingroomblock"  style="display:none">
+            <div class="form-group" id="mrtimeblock" style="display:none" >
                 <div class="col-sm-offset-2 col-sm-10">
-                    <select style="width: 93%" id="timeblock" class="form-control form-horizontal" >
+                    <select style="width: 93%" id="timeblock" class="form-control form-horizontal" name="tblock">
                         <option value="">SELECT DESIRED TIMEBLOCK</option>
                         @foreach ($timeblocks as $tb)
                         <option value="{{ $tb->code }}" data-timestart="{{ $tb->timestart }}" data-timeend="{{ $tb->timeend }}">{{ $tb->code }} | {{ date('h:i:s A', strtotime($tb->timestart)) }} - {{ date('h:i:s A', strtotime($tb->timeend)) }}</option>
@@ -98,7 +98,7 @@
 
             <div class="form-group" id="meetingrooms">
                 <div class="col-sm-offset-2 col-sm-10">
-                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="prefmr" class="form-control form-horizontal" multiple >
+                    <select name="PrefFuncRooms[]" onchange="validate()" style="width: 93%" id="prefmr" class="form-control form-horizontal" multiple disabled>
                         @foreach ($meetingrooms as $meetingroom)
                         <option data-maxcap="{{ $meetingroom->maxcapacity }}" data-mincap="{{ $meetingroom->mincapacity }}" data-id="{{ $meetingroom->timeblockcode }}" value="{{ $meetingroom->code }}">{{ $meetingroom->name }} || {{ $meetingroom->mincapacity }} - {{ $meetingroom->maxcapacity }} pax</option>
                         @endforeach

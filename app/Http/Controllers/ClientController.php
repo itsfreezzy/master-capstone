@@ -125,15 +125,19 @@ class ClientController extends Controller
         ]);
     }
     
-    public function submitReservationForm(Request $request, Captcha $captcha){
-        $response = $captcha->check($request);
-        if (! $response->isVerified()) {
-            return redirect()->route('client.reservationform')->withInput()->with(['error' => $response->errors()]);
-        }
-
+    public function submitReservationForm(Request $request, Captcha $captcha) {
         $validator = Validator::make($request->all(), $this->rules(), $this->messages());
 
         if ($validator->fails()) {
+            $response = $captcha->check($request);
+            if (! $response->isVerified()) {
+                return redirect()
+                    ->route('client.reservationform')
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with(['error' => $response->errors()]);
+            }
+
             return redirect()
                     ->route('client.reservationform')
                     ->withErrors($validator)

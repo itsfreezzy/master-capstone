@@ -148,12 +148,159 @@ NEW RESERVATION | USER - UNILAB Bayanihan Center
 <script src="{{ asset('SmartWizard-master/dist/js/jquery.smartWizard.min.js') }}"></script>
 
 <script>
+var ctrEquipment = 1;
 $(function() {
-    $('#meetingroomblock').hide();
-    $('#functionhalls').hide();
-    $('#mrtimeblock').hide();
-    $('#prefmr').attr('disabled', true);
-    $('#preffh').attr('disabled', true);
+    var preffrtype = @json(old('frtype'));
+    var oldinput = @json(old('PrefFuncRooms'));
+    var oldtb = @json(old('tblock'));
+    var $meetingrooms = @json($meetingrooms);
+    var $equip = @json(old('equipments'));
+    var $qty = @json(old('quantity'));
+    var $tot = @json(old('total'));
+    var clickedEquipment = false;
+    var limitEquipment = $('#Equipment option').length;
+
+    if (preffrtype == 'FH') {
+        $('#preffh option').each(function() {
+            var inst = $(this);
+
+            $.each(oldinput, function(key, val){
+                if (inst.val() == val) {
+                    inst.prop('selected', true);
+                }
+            });
+        });
+
+        $('#preffh').attr('disabled', false);
+        $('#functionhalls').show();
+    } else if (preffrtype == 'MR') {
+        $('#timeblock option').each(function() {
+            if ($(this).val() == oldtb) {
+                $(this).prop('selected', true);
+
+                return false;
+            }
+        });
+
+        var combos = @JSON($meetrmdiscount);
+        $('#prefmr').empty();
+        $.each($meetingrooms, function(key, val) {
+            $('#prefmr').append('<option data-timestart="'+val.timestart+'" data-mincap="'+val.mincapacity+'" data-maxcap="'+val.maxcapacity+'" data-timeend="'+val.timeend+'" data-id="'+val.timeblockcode+'" value="'+val.code+'">'+val.name+' || '+val.mincapacity+' - '+val.maxcapacity+' pax</option>');
+        });
+        $.each(combos, function(key, val) {
+            $('#prefmr').append('<option data-timestart="'+val.timestart+'" data-mincap="'+val.mincapacity+'" data-maxcap="'+val.maxcapacity+'" data-timeend="'+val.timeend+'" data-id="'+val.timeblockcode+'" value="'+val.code+'">'+val.name+' || '+val.mincapacity+' - '+val.maxcapacity+' pax</option>');
+        });
+        switch (oldtb) {
+            case 'C':
+            case 'F':
+            case 'G':
+                $('#prefmr').attr('multiple', false);
+                // $('#prefmr').select2();
+                break;
+            default:
+                $('#prefmr').attr('multiple', true);
+                // $('#prefmr').select2();
+        }
+
+        $('#prefmr option').each(function() {
+            var mr = $(this);
+            var mrtimeblock = $(this).data('id');
+            
+            if (!mrtimeblock.includes(oldtb)) {
+                // mr.attr('disabled', true);
+                mr.remove();
+            }
+        });
+
+        $('#prefmr').val(null);
+        $('#prefmr').select2();
+
+        $('#timestart').val($('#timeblock :selected').data('timestart'));
+        $('#timestart').prop('readonly', true);
+        $('#timeend').val($('#timeblock :selected').data('timeend'));
+        $('#timeend').prop('readonly', true);
+
+        if (oldtb == '' || oldtb == null) {
+            $('#prefmr').attr('disabled', true);
+        } else {
+            updateFunctionRooms($('#EventDate').val());
+            $('#prefmr').attr('disabled', false);
+        }
+
+        $('#prefmr option').each(function() {
+            var inst = $(this);
+
+            $.each(oldinput, function(key, val) {
+                if (inst.val() == val) {
+                    inst.prop('selected', true);
+                } 
+            });
+        });
+
+        $('#prefmr').attr('disabled', false);
+        $('#mrtimeblock').show();
+        $('#meetingroomblock').show();
+    }
+
+    if (!Array.isArray($equip) || !$equip.length) {
+    } else {
+        var eid = new Array();
+        var disp_equip_id = new Array();
+        var total = 0;
+
+        $('#listEquipment').append('<div class="row"><label id="lbl1" for="" class="col-sm-3 control-label">Equipment</label>'+
+        '<label id="lbl2" for="" class="col-sm-offset-1 col-sm-1 control-label">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quantity</label>'+
+        '<label id="lbl3" for="" class="col-sm-offset-1 col-sm-1 control-label">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price</label>'+
+        '<label class="col-sm-offset-2 col-sm-3" id="lbl4" style="visibility:hidden">asdzxcxzczxczcxzczxczxczxxczxczxczczxxczczczxcczxczcz</label><br /><br />'+
+        '<div class="row">'+
+                '<label class="col-sm-offset-5 col-sm-1 control-label" id="lbltotal">Total: P</label>'+
+                '<div class="col-sm-2">'+
+                    '<input type="text" id="grandtot" class="form-control" readonly>'+
+                '</div>'+
+            '</div>');
+        clickedEquipment = true;
+
+        $('#Equipment option').each(function() {
+            var inst = $(this);
+
+            $.each($equip, function(key, val) {
+                if (val == inst.val()) {
+                    eid.push(inst.data('id'));
+                    disp_equip_id.push(inst.text());
+                }
+            });
+        });
+        
+        $.each($equip, function(key, val) {
+            var add = '<div class="form-group" id="equipRow'+eid[key]+'">'+
+                    '<div style="display: none">'+
+                        '<input class="form-control" type="text" data-id="'+eid[key]+'" id="unique'+eid[key]+'" name="equipments[]" value="'+ val +'" readonly>'+
+                    '</div>'+
+                    '<div class="col-sm-offset-1 col-sm-3">'+
+                        '<input class="form-control" type="text" value="'+ disp_equip_id[key] +'" readonly>'+
+                    '</div>'+
+                    '<div class="col-sm-2">'+
+                        '<input class="form-control" onkeyup="computePrice('+eid[key]+', this)" onchange="computePrice('+eid[key]+', this)" id="prodlimit'+eid[key]+'" type="number" name="'+$qty[key]+'" min="1" required>'+
+                    '</div>'+
+                    '<div class="col-sm-2">'+
+                        '<input type="text" data-id="total" name="total[]" data-e_id="'+eid[key]+'" class="form-control" id="equipTotal'+eid[key]+'" readonly value="'+$tot[key]+'">' +
+                    '</div>'+
+                    '<div class="col-sm-2">'+
+                        '<button type="button" class="btn btn-danger" id="removeEquipment" onclick="removeEquipmentRow('+eid[key]+')">REMOVE EQUIPMENT</button>' +
+                    '</div>'+
+                  '</div>';
+            $(add).insertBefore($('#lbltotal'));
+
+            ctrEquipment++;
+
+            total += $tot[key];
+
+            $('input[type=number]').not('#NumAttendees').bind('keyup mouseup', validate);
+            validate();
+        });
+        
+        $('#lbltotal').val(total);
+    }
     
     $('[data-toggle="tooltip"]').tooltip();
     //##################################################################
@@ -491,11 +638,6 @@ $(function() {
     $('#consent').change(validate);
 
     //##################################################################
-    // Select only from one option group for Function Rooms
-    //##################################################################
-    $meetingrooms = @json($meetingrooms);
-
-    //##################################################################
     // Dynamic Radio Button that sees if Catererer selected is Accredited
     //##################################################################
     $caterer.on('change', function (event) {
@@ -526,10 +668,6 @@ $(function() {
     //##################################################################
     // for Adding of Equipment
     //##################################################################
-    var clickedEquipment = false;
-    var limitEquipment = $('#Equipment option').length;
-    var ctrEquipment = 1;
-
     $('#addEquipment').click(function() {
         
         if (ctrEquipment > limitEquipment) {
@@ -589,6 +727,12 @@ $(function() {
             $('input[type=number]').not('#NumAttendees').bind('keyup mouseup', validate);
             validate();
         }
+
+        if ($('#timestart').val() == '' || $('#timestart').val() == null || $('#timeend').val() == '' || $('#timeend').val() == null) {
+            $('[id^=equipRow] [id^=prodlimit]').each(function() {
+                $(this).attr('disabled', true);
+            });
+        }
     });
 
     //##################################################################
@@ -598,16 +742,10 @@ $(function() {
         keyup: function() {
             var date = $(this).val();
             updateFunctionRooms(date);
-            var test = date.split('-');
-            if (test[0] > (new Date).getFullYear()) {
-                test[0] = (new Date).getFullYear();
-                $(this).val(test.join('-'));
-            }
         },
         change: function() {
             var date = $(this).val();
             updateFunctionRooms(date);
-            // onDateChange();
         }
     });
 
@@ -621,6 +759,17 @@ $(function() {
         },
         change: function() {
             timeChange();
+            if ( ($(this).val() != null && $(this).val() != '') && ($('#timeend').val() != null && $('#timeend').val() != '') ) {
+                $('[id^=equipRow] [id^=prodlimit]').each(function() {
+                    var inst = $(this);
+
+                    if (inst.attr('disabled')) {
+                        inst.attr('disabled', false);
+                    }
+                });
+            } else {
+
+            }
         }
     });
     $('#timeend').on({
@@ -629,6 +778,17 @@ $(function() {
         },
         change: function() {
             timeChange();
+            if ( ($(this).val() != null && $(this).val() != '') && ($('#timestart').val() != null && $('#timestart').val() != '') ) {
+                $('[id^=equipRow] [id^=prodlimit]').each(function() {
+                    var inst = $(this);
+
+                    if (inst.attr('disabled')) {
+                        inst.attr('disabled', false);
+                    }
+                });
+            } else {
+                
+            }
         }
     });
 });
@@ -734,6 +894,8 @@ function timeChange() {
     var timeEnd = new Date(getTodayDate() + ' ' + $('#timeend').val());
     var diff = (timeEnd - timeStart)/1000/60/60;
     var grandTotal = 0;
+
+    console.log(diff);
     
     if (diff <= 0) {
         if (diff >= 1 || diff <= 5) {
@@ -746,9 +908,9 @@ function timeChange() {
         diff = 24 + diff;
     }
 
-    if ((now - timeEnd)/1000/60/60 < 0 && (now - timeEnd)/1000/60/60 >= -7.5) {
-        $('#timeend').val('00:00')
-    }
+    // if ((now - timeEnd)/1000/60/60 < 0 && (now - timeEnd)/1000/60/60 >= -7.5) {
+    //     $('#timeend').val('00:00')
+    // }
 
     $.each(equipmentlist, function(key, val) {
         $('#listEquipment input').each(function() {
@@ -774,8 +936,8 @@ function timeChange() {
 
 function removeEquipmentRow(sourceRow) {
     $('#equipRow' + sourceRow).remove();
-    validate();
     ctrEquipment--;
+    validate();
 }
 
 function validate() {
