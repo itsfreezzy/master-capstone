@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Validator;
-use App\FunctionHall, App\FunctionHallCombo;
+use App\FunctionHall, App\FunctionHallCombo, App\UserLog, Auth;
 
 class FunctionHallController extends Controller
 {
@@ -62,6 +62,12 @@ class FunctionHallController extends Controller
         $fh = FunctionHall::find($functionhall->id);
         $fh->code = sprintf('FH-%03d', $functionhall->id);
         $fh->save();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Function Hall - ' . $functionhall->code . ' - ' . $functionhall->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         
         return redirect()->route('admin.function-halls.index')->with(['success' => 'Function hall is successfully added to the database.']);
     }
@@ -112,6 +118,13 @@ class FunctionHallController extends Controller
 
         if ($functionhall->isDirty()) {
             $functionhall->save();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Function Hall - ' . $functionhall->code . ' - ' . $functionhall->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
+
             return redirect()->route('admin.function-halls.index')->with(['success' => 'Function hall is successfully updated.']);
         }
 
@@ -121,7 +134,14 @@ class FunctionHallController extends Controller
 
     public function destroy($id)
     {
-        FunctionHall::find($id)->delete();
+        $functionhall = FunctionHall::find($id);
+        $functionhall->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Function Hall - ' . $functionhall->code . ' - ' . $functionhall->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         return redirect()->route('admin.function-halls.index')->with(['success' => 'Function hall is successfully deleted.']);
     }
 
@@ -129,7 +149,14 @@ class FunctionHallController extends Controller
     public function restore($id)
     {
         try {
-            FunctionHall::withTrashed()->where('id', $id)->restore();
+            $functionhall = FunctionHall::withTrashed()->where('id', $id)->first();
+            $functionhall->restore();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Activated Function Hall - ' . $functionhall->code . ' - ' . $functionhall->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
         } catch (Exception $e) {
             return redirect()->route('admin.function-halls.index')->with(['error' => 'Error restoring function hall.']);
         }
@@ -200,6 +227,12 @@ class FunctionHallController extends Controller
         $functionhall->ineghourlyrate = $request->input('addinegrate');
         $functionhall->hourlyexcessrate = $request->input('addhourlyexcess');
         $functionhall->save();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Function Hall Combo - ' . $functionhall->code . ' - ' . $functionhall->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         
         return redirect()->route('admin.fhalls-combo.index')->with(['success' => 'Function hall combo is successfully added to the database.']);
     }
@@ -254,6 +287,12 @@ class FunctionHallController extends Controller
 
         if ($functionhall->isDirty()) {
             $functionhall->save();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Function Hall Combo - ' . $functionhall->code . ' - ' . $functionhall->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
             return redirect()->route('admin.fhalls-combo.index')->with(['success' => 'Function hall is successfully updated.']);
         }
 
@@ -262,7 +301,14 @@ class FunctionHallController extends Controller
 
     public function comboDestroy($id) {
         try {
-            FunctionHallCombo::find($id)->delete();
+            $functionhall = FunctionHallCombo::find($id);
+            $functionhall->delete();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Deactivated Function Hall Combo - ' . $functionhall->code . ' - ' . $functionhall->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
         } catch (Exception $e) {
             return redirect()->route('admin.fhalls-combo.index')->with(['error' => 'Error deleting function hall.']);
         }
@@ -271,7 +317,14 @@ class FunctionHallController extends Controller
 
     public function comboRestore($id) {
         try {
-            FunctionHallCombo::withTrashed()->where('id', $id)->restore();
+            $functionhall = FunctionHallCombo::withTrashed()->where('id', $id)->first();
+            $functionhall->restore();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Activated Function Hall Combo - ' . $functionhall->code . ' - ' . $functionhall->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
         } catch (Exception $e) {
             return redirect()->route('admin.fhalls-combo.index')->with(['error' => 'Error restoring function hall.']);
         }

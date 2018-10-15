@@ -29,6 +29,7 @@ class AdminNavigationController extends Controller
         $donereservations = Reservation::where('status', 'Done')->count();
         $cancelledreservations = Reservation::withTrashed()->where('status', 'Cancelled')->count();
         $reservationstoday = Reservation::whereBetween('datefiled', [(date('Y-m-d') . ' 00:00:00'), (date('Y-m-d' . ' 23:59:59'))])->count();
+        $paymentstoday = Payment::whereBetween('created_at', [(date('Y-m-d') . ' 00:00:00'), (date('Y-m-d' . ' 23:59:59'))])->count();
 
         $events = [];
         $colors = [];
@@ -77,6 +78,7 @@ class AdminNavigationController extends Controller
             'meetingrooms' => $meetingrooms,
             'eventvenues' => $eventvenues,
             'reservationstoday' => $reservationstoday,
+            'paymentstoday' => $paymentstoday,
         ]);
     }
 
@@ -112,7 +114,7 @@ class AdminNavigationController extends Controller
 
     public function userlog()
     {
-        $userlogs = UserLog::join('users', 'users.id', '=', 'userlog.userid')->get();
+        $userlogs = UserLog::join('users', 'users.id', '=', 'userlog.userid')->orderBy('date', 'desc')->get();
         return view('admin.user-log')->with([
             'userlogs' => $userlogs,
         ]);

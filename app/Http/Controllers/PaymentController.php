@@ -69,6 +69,13 @@ class PaymentController extends Controller
 
         $payment->status = 'Confirmed';
         $payment->save();
+        $reservation = Reservation::where('code', $payment->reservationcode)->first();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Confirmed Payment - ' . $payment->paymentcode . ' for ' . $payment->reservationcode . ' - ' . $reservation->eventtitle,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
 
         DB::table('tblreservations')->where('code', $payment->reservationcode)->decrement('balance', $payment->amount);
         DB::table('tblreservations')->where('code', $payment->reservationcode)->increment('paid', $payment->amount);
@@ -88,6 +95,13 @@ class PaymentController extends Controller
         $payment->save();
 
         $reservation = Reservation::where('code', $payment->reservationcode)->firstOrFail();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Rejected Payment - ' . $payment->paymentcode . ' for ' . $payment->reservationcode . ' - ' . $reservation->eventtitle,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         $customer = Customer::where('code', $reservation->customercode)->select('email')->firstOrFail();
 
         \Mail::to($customer)->cc($reservation->eoemail)->send(new PaymentRejected($customer, $reservation, $payment));

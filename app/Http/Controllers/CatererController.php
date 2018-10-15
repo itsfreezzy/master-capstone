@@ -8,6 +8,7 @@ use App\CatEmail;
 use App\CatContact;
 use App\CatContactPerson;
 use Validator;
+use Auth, App\UserLog;
 
 class CatererController extends Controller
 {
@@ -75,6 +76,12 @@ class CatererController extends Controller
             $catcontactperson->save();
         }
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Caterer - ' . $caterer->id . ' - ' . $caterer->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.caterers.index')->with(['success' => 'Caterer has been added to the database.']);
     }
 
@@ -130,6 +137,12 @@ class CatererController extends Controller
             $catcontactperson->save();
         }
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Updated Caterer - ' . $caterer->id . ' - ' . $caterer->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.caterers.index')->with(['success' => 'Caterer information successfully updated.']);
 
     }
@@ -137,7 +150,14 @@ class CatererController extends Controller
     
     public function destroy($id)
     {
-        Caterer::find($id)->delete();
+        $caterer = Caterer::find($id);
+        $caterer->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Caterer - ' . $caterer->id . ' - ' . $caterer->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         
         return redirect()->route('admin.caterers.index')->with(['success' => 'Caterer successfully deleted.']);
     }
@@ -145,7 +165,14 @@ class CatererController extends Controller
 
     public function restore($id)
     {
-        Caterer::withTrashed()->where('id', $id)->restore();
+        $caterer = Caterer::withTrashed()->where('id', $id)->first();
+        $caterer->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Caterer - ' . $caterer->id . ' - ' . $caterer->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
 
         return redirect()->route('admin.caterers.index')->with(['success' => 'Caterer is successfully restored.']);
     }

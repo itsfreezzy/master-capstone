@@ -41,10 +41,6 @@ Route::get('/schedule', 'WebNavigationController@goToSchedules')->name('web.sche
 // Web - Rates
 Route::get('/rates', 'WebNavigationController@goToRates')->name('web.rates');
 
-// Web - Reservation
-// Route::get('/reservation', 'WebNavigationController@goToReservation')->name('web.reservation');
-// Route::post('/reservation', 'ReservationInfoController@store')->name('reservationform.submit');
-
 // GET ROUTES FOR AJAX
 Route::post('/getreservedrooms', 'WebNavigationController@getReservedRooms');
 Route::post('/edit/getreservedrooms', 'WebNavigationController@getOnEditReservedRooms');
@@ -62,6 +58,8 @@ Route::prefix('customer')->group(function() {
     Route::post('/login', 'Auth\CustomerLoginController@login')->name('client.login.submit');
     Route::get('/register', 'Auth\CustomerRegisterController@showRegisterForm')->name('client.register');
     Route::post('/register', 'Auth\CustomerRegisterController@register')->name('client.register.submit');
+    Route::get('/forgot-password', 'Auth\CustomerLoginController@forgotPasswordForm')->name('client.forgot-password');
+    Route::post('/forgot-password', 'Auth\CustomerLoginController@forgotPassword')->name('client.forgot-password.submit');
 
     Route::group(['middleware' => ['auth:customer']], function() {
         Route::post('/logout', 'Auth\CustomerLoginController@logout')->name('client.logout');
@@ -152,6 +150,7 @@ Route::prefix('admin')->group(function() {
             Route::put('/amenities/{id}/edit', 'AmenityController@update')->name('admin.amenities.edit');
             Route::delete('/amenities/{id}/destroy', 'AmenityController@destroy')->name('admin.amenities.destroy');
             Route::patch('/amenities/{id}/restore', 'AmenityController@restore')->name('admin.amenities.restore');
+            Route::post('/amenity/get', 'AmenityController@getAmenity'); // AJAX GET ROUTE
 
             // Equipments
             // Route::resource('equipments', 'EquipmentController');
@@ -254,6 +253,10 @@ Route::prefix('admin')->group(function() {
         Route::post('/reports/sales/generatepdf', 'ReportController@generateSalesReport')->name('admin.reports-sales.generatepdf');
 
         Route::get('/reports/misc', 'ReportController@miscIndex')->name('admin.reports.misc');
+        Route::post('/reports/misc/resevervation-history', 'ReportController@generateReservationHistory')->name('admin.reports.generate.reshist');
+        Route::post('/reports/misc/payment-history', 'ReportController@generatePaymentHistory')->name('admin.reports.generate.payhist');
+        Route::post('/reports/misc/customers-with-balance', 'ReportController@generateCustWithBal')->name('admin.reports.generate.custwithbal');
+        Route::post('/reports/misc/activity-log', 'ReportController@generateActivityLog')->name('admin.reports.generate.actlog');
 
 
         // MISC

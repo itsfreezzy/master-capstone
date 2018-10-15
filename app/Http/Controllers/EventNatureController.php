@@ -40,6 +40,12 @@ class EventNatureController extends Controller
         $eventnature->nature = $request->input('addEventNature');
         $eventnature->save();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Event Nature - ' . $eventnature->id . ' - ' . $eventnature->nature,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.events.index')->with([
             'success' => 'Event Type is successfully added to the database.',
         ]);
@@ -68,6 +74,12 @@ class EventNatureController extends Controller
         if ($eventnature->isDirty()) {
             $eventnature->save();
 
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Event Nature - ' . $eventnature->id . ' - ' . $eventnature->nature,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
+
             return redirect()->route('admin.events.index')->with([
                 'success' => 'Event Type is successfully updated.',
             ]);
@@ -80,7 +92,14 @@ class EventNatureController extends Controller
     
     public function destroy($id)
     {
-        EventNature::find($id)->delete();
+        $eventnature = EventNature::find($id);
+        $eventnature->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Event Nature - ' . $eventnature->id . ' - ' . $eventnature->nature,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
 
         return redirect()->route('admin.events.index')->with([
             'success' => 'Event Type is successfully removed from the database.',
@@ -89,7 +108,15 @@ class EventNatureController extends Controller
 
     public function restore($id)
     {
-        EventNature::withTrashed()->where('id', $id)->restore();
+        $eventnature = EventNature::withTrashed()->where('id', $id)->first();
+        $eventnature->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Event Nature - ' . $eventnature->id . ' - ' . $eventnature->nature,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.events.index')->with(['success' => 'Event Type is successfully restored from the database.']);
 
     }

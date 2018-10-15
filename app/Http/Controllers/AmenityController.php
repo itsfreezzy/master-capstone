@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Auth;
+use Auth, App\UserLog;
 use Validate;
 use App\Amenity;
 use Validator;
@@ -40,6 +40,12 @@ class AmenityController extends Controller
         $amenity->description = $request->input('addamenityDesc');
         $amenity->save();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Amenity - ' . $amenity->id . ' - ' . $amenity->amenity,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.amenities.index')->with(['success' => 'Amenity successfully added.']);
     }
 
@@ -69,6 +75,12 @@ class AmenityController extends Controller
         if ($amenity->isDirty()) {
             $amenity->save();
 
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Amenity - ' . $amenity->id . ' - ' . $amenity->amenity,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
+
             return redirect()->route('admin.amenities.index')->with(['success' => 'Amenity has been updated.']);
         }
 
@@ -78,14 +90,36 @@ class AmenityController extends Controller
 
     public function destroy($id)
     {
-        Amenity::find($id)->delete();
+        $amenity = Amenity::find($id);
+        $amenity->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Amenity - ' . $amenity->id . ' - ' . $amenity->amenity,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.amenities.index')->with(['success' => 'Amenity successfully deleted']);
     }
 
 
     public function restore($id)
     {
-        Amenity::withTrashed()->where('id', $id)->restore();
+        $amenity = Amenity::withTrashed()->where('id', $id)->first();
+        $amenity->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Amenity - ' . $amenity->id . ' - ' . $amenity->amenity,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+        
         return redirect()->route('admin.amenities.index')->with(['success' => 'Amenity successfully restored.']);
+    }
+
+    public function getAmenity(Request $request) {
+        $amenity = Amenity::withTrashed()->where('id', $request->id)->first();
+
+        return $amenity;
     }
 }

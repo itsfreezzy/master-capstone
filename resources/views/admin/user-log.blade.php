@@ -61,7 +61,9 @@ Bayanihan Center | User Log
 @section('scripts')
 <script type="text/javascript">
 $(function() {
-    $('#tblReservations').DataTable();
+    $('#tblReservations').DataTable({
+        order: []
+    });
 });
 </script>
 @endsection

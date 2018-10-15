@@ -59,10 +59,10 @@ Bayanihan Center | Amenities
                             <td>
                                 <div class="btn-group">
                                 @if($amenity->trashed())
-                                <button class="btn btn-warning" data-toggle="modal" data-target="#modalRestore{{$amenity->id}}" title="Restore Amenity"> <i class="fa fa-undo"></i></button>
+                                <button class="btn btn-warning" id="btnmodalrestore"data-id="{{$amenity->id}}" title="Restore Amenity"> <i class="fa fa-undo"></i></button>
                                 @else
-                                <button class="btn btn-primary" data-toggle="modal" data-target="#modalUpdate{{$amenity->id}}" title="Update Amenity"> <i class="fa fa-edit"></i></button>
-                                <button class="btn btn-danger" data-toggle="modal" data-target="#modalDelete{{$amenity->id}}" title="Remove Amenity"> <i class="fa fa-close"></i></button>
+                                <button class="btn btn-primary" id="btnmodalupdate" data-id="{{$amenity->id}}" title="Update Amenity"> <i class="fa fa-edit"></i></button>
+                                <button class="btn btn-danger" id="btnmodaldelete" data-id="{{$amenity->id}}" title="Remove Amenity"> <i class="fa fa-close"></i></button>
                                 @endif
                                 </div>
                             </td>
@@ -136,29 +136,9 @@ Bayanihan Center | Amenities
     </div>
 </div>
 
-{{-- Read Modal
-<div class="modal fade" id="" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close-btn"><span aria-hidden="true">&times;</span></button>
-            </div>
-
-            <div class="modal-body">
-
-            </div>
-
-            <div class="modal-footer">
-
-            </div>
-        </div>
-    </div>
-</div> --}}
-
 @if(count($amenities) > 0)
-@foreach($amenities as $amenity)
 {{-- Update Modal --}}
-<div class="modal fade" id="modalUpdate{{$amenity->id}}" role="dialog">
+<div class="modal fade" id="modalUpdate" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -166,14 +146,14 @@ Bayanihan Center | Amenities
                 <h4 class="modal-title"><i class="fa fa-edit"></i> Edit</h4>
             </div>
 
-            <form action="{{ action('AmenityController@update', ['id' => $amenity->id]) }}" class="form-horizontal" method="post">
+            <form class="form-horizontal" method="post" id="formupdate">
                 <input type="hidden" name="_method" value="PUT">
                 <div class="modal-body">
                         @csrf
                         <div class="form-group">
                             <label for="" class="col-sm-4 control-label">Amenity:</label>
                             <div class="col-sm-7">
-                                <input type="text" class="form-control" value="{{$amenity->amenity}}" name="editamenityName" placeholder="Insert amenity..." autocomplete="off" required>
+                                <input type="text" class="form-control" id="eamenityname" name="editamenityName" placeholder="Insert amenity..." autocomplete="off" required>
                             </div>
 
                             @if ($errors->has('editamenityName'))
@@ -188,7 +168,7 @@ Bayanihan Center | Amenities
                         <div class="form-group">
                             <label for="" class="col-sm-4 control-label">Description:</label>
                             <div class="col-sm-7">
-                                <input type="text" class="form-control" value="{{$amenity->description}}" name="editamenityDesc" placeholder="Insert amenity description..." autocomplete="off" >
+                                <input type="text" class="form-control" id="eamenitydesc" name="editamenityDesc" placeholder="Insert amenity description..." autocomplete="off" >
                             </div>
                         </div>
                 </div>
@@ -202,9 +182,8 @@ Bayanihan Center | Amenities
     </div>
 </div>
 
-@if (!$amenity->trashed())
 {{-- Delete Modal --}}
-<div class="modal fade" id="modalDelete{{$amenity->id}}" role="dialog">
+<div class="modal fade" id="modalDelete" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -217,7 +196,7 @@ Bayanihan Center | Amenities
             </div>
             
             <div class="modal-footer">
-                <form action="{{ action('AmenityController@destroy', ['id' => $amenity->id]) }}" method="POST" class="pull pull-right">
+                <form method="POST" class="pull pull-right" id="formdelete">
                     @csrf
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="glyphicon glyphicon-remove-sign"></i> Cancel</button>
@@ -228,9 +207,8 @@ Bayanihan Center | Amenities
     </div>
 </div>
 
-@else
 {{-- Restore Modal --}}
-<div class="modal fade" id="modalRestore{{$amenity->id}}" role="dialog">
+<div class="modal fade" id="modalRestore" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -243,7 +221,7 @@ Bayanihan Center | Amenities
             </div>
 
             <div class="modal-footer">
-                <form action="{{ action('AmenityController@restore', ['id' => $amenity->id]) }}" method="POST" class="pull pull-right">
+                <form id="formrestore" method="POST" class="pull pull-right">
                     @csrf
                     <input type="hidden" name="_method" value="PATCH">
                     <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="glyphicon glyphicon-remove-sign"></i> Cancel</button>
@@ -253,8 +231,6 @@ Bayanihan Center | Amenities
         </div>
     </div>
 </div>
-@endif
-@endforeach
 @endif
 @endsection
 
@@ -266,6 +242,66 @@ Bayanihan Center | Amenities
             "order": [],
         });
     })
+
+    $(document).on('click', '#btnmodalupdate', function() {
+        var id = $(this).data('id');
+        var route = "{{ route('admin.amenities.edit', ['id' => 'idhere']) }}";
+
+        $.ajax({
+            url: '/admin/maintenance/amenity/get',
+            method: 'POST',
+           data: {
+                _token: $('meta[name=csrf-token]').attr('content'),
+                id: id,
+           },
+           success: function(amenity) {
+                $('#eamenityname').val(amenity.amenity);
+                $('#eamenitydesc').val(amenity.description);
+
+                $('#form-update').attr('action', route.replace('idhere', amenity.id));
+
+                $('#modalUpdate').modal('show');
+           }
+        })
+    });
+
+    $(document).on('click', '#btnmodaldelete', function() {
+        var id = $(this).data('id');
+        var route = "{{ route('admin.amenities.destroy', ['id' => 'idhere']) }}";
+
+        $.ajax({
+            url: '/admin/maintenance/amenity/get',
+            method: 'POST',
+           data: {
+                _token: $('meta[name=csrf-token]').attr('content'),
+                id: id,
+           },
+           success: function(amenity) {
+                $('#formdelete').attr('action', route.replace('idhere', amenity.id));
+
+                $('#modalDelete').modal('show');
+           }
+        })
+    });
+
+    $(document).on('click', '#btnmodalrestore', function() {
+        var id = $(this).data('id');
+        var route = "{{ route('admin.amenities.restore', ['id' => 'idhere']) }}";
+
+        $.ajax({
+            url: '/admin/maintenance/amenity/get',
+            method: 'POST',
+           data: {
+                _token: $('meta[name=csrf-token]').attr('content'),
+                id: id,
+           },
+           success: function(amenity) {
+                $('#formrestore').attr('action', route.replace('idhere', amenity.id));
+
+                $('#modalRestore').modal('show');
+           }
+        })
+    });
 
     @if(session('showAddModal'))
         $('#modalCreate').modal('show');

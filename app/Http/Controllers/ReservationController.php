@@ -81,6 +81,12 @@ class ReservationController extends Controller
         $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
         $reservation->delete();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Cancelled Reservation - ' . $reservation->code . ' - ' . $reservation->eventtitle,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         try {
             \Mail::to($customer->email)->send(new CancelReservation($reservation, $customer));
             \Mail::to($reservation->eoemail)->send(new CancelReservation($reservation, $customer));

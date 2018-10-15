@@ -1268,7 +1268,7 @@ class ClientController extends Controller
             'seccontactinfo.telno' => 'sometimes|nullable|digits:7',
             'seccontactinfo.mobno' => 'sometimes|nullable|required_with:seccontactinfo.name|digits:11',
             'seccontactinfo.email' => 'sometimes|nullable|required_with:seccontactinfo.name|email',
-            'seccontactinfo.address' => 'sometimes|nullable|required_with:seccontactinfo.name|alpha_dash',
+            'seccontactinfo.address' => 'sometimes|nullable|required_with:seccontactinfo.name',
             'consent' => 'accepted',
         ];
     }

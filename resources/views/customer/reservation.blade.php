@@ -937,6 +937,12 @@ function timeChange() {
 function removeEquipmentRow(sourceRow) {
     $('#equipRow' + sourceRow).remove();
     ctrEquipment--;
+    var total = 0;
+
+    $('[id^=equipRow] [id^=equipTotal]').each(function() {
+        total += parseFloat($(this).val());
+    });
+    $('#grandtot').val(total);
     validate();
 }
 

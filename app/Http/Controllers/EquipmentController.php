@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Equipment;
 use Validator;
+use App\UserLog, Auth;
 
 class EquipmentController extends Controller
 {
@@ -46,6 +47,12 @@ class EquipmentController extends Controller
         $equipment->code = sprintf('EQUIP-%03d', $equipment->id);
         $equipment->save();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Equipment - ' . $equipment->code . ' - ' . $equipment->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.equipments.index')->with(['success' => 'Equipment successfully added.']);
     }
 
@@ -81,6 +88,12 @@ class EquipmentController extends Controller
 
         if ($equipment->isDirty()) {
             $equipment->save();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Equipment - ' . $equipment->code . ' - ' . $equipment->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
             
             return redirect()->route('admin.equipments.index')->with(['success' => 'Equipment successfully updated.']);
         }
@@ -91,14 +104,28 @@ class EquipmentController extends Controller
 
     public function destroy($id)
     {
-        Equipment::find($id)->delete();
+        $equipment = Equipment::find($id);
+        $equipment->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Equipment - ' . $equipment->code . ' - ' . $equipment->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         return redirect()->route('admin.equipments.index')->with(['success' => 'Equipment successfully deleted.']);
     }
 
     
     public function restore($id)
     {
-        Equipment::withTrashed()->where('id', $id)->restore();
+        $equipment = Equipment::withTrashed()->where('id', $id)->first();
+        $equipment->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Equipment - ' . $equipment->code . ' - ' . $equipment->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         
         return redirect()->route('admin.equipments.index')->with(['success' => 'Equipment successfully restored.']);
     }

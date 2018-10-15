@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Validator;
 use App\MeetingRoom, App\MeetingRoomCombo;
 use App\Timeblock;
+use App\UserLog;
+use Auth;
 
 class MeetingRoomController extends Controller
 {
@@ -57,6 +59,12 @@ class MeetingRoomController extends Controller
         $mr->code = sprintf('MR-%03d', $meetingroom->id);
         $mr->save();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Meeting Room - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.meeting-rooms.index')->with(['success' => 'Meeting room is successfully added to the database.']);
     }
 
@@ -95,6 +103,12 @@ class MeetingRoomController extends Controller
 
         if ($meetingroom->isDirty()){
             $meetingroom->save();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Meeting Room - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
             return redirect()->route('admin.meeting-rooms.index')->with(['success' => 'Meeting room is successfully updated!']);
         }
 
@@ -104,14 +118,28 @@ class MeetingRoomController extends Controller
     
     public function destroy($id)
     {
-        MeetingRoom::find($id)->delete();
+        $meetingroom = MeetingRoom::find($id);
+        $meetingroom->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Meeting Room - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         return redirect()->route('admin.meeting-rooms.index')->with(['success' => 'Meeting room is successfully deleted.']);
     }
 
  
     public function restore($id)
     {
-        MeetingRoom::withTrashed()->where('id', $id)->restore();
+        $meetingroom = MeetingRoom::withTrashed()->where('id', $id)->first();
+        $meetingroom->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Meeting Room - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         return redirect()->route('admin.meeting-rooms.index')->with(['success' => 'Meeting room is successfully restored.']);
     }
 
@@ -170,6 +198,12 @@ class MeetingRoomController extends Controller
         $meetingroom->timeblockcode = $request->input('addtimeblock');
         $meetingroom->save();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Meeting Room Combo - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.mrooms-combo.index')->with(['success' => 'Meeting room is successfully added to the database.']);
     }
 
@@ -206,6 +240,12 @@ class MeetingRoomController extends Controller
 
         if ($meetingroom->isDirty()){
             $meetingroom->save();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Meeting Room Combo - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
             return redirect()->route('admin.meeting-rooms.index')->with(['success' => 'Meeting room is successfully updated!']);
         }
 
@@ -214,12 +254,26 @@ class MeetingRoomController extends Controller
     }
 
     public function comboDestroy($id) {
-        MeetingRoomCombo::find($id)->delete();
+        $meetingroom = MeetingRoomCombo::find($id);
+        $meetingroom->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Meeting Room Combo - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         return redirect()->route('admin.mrooms-combo.index')->with(['success' => 'Meeting room is successfully deleted.']);
     }
 
     public function comboRestore($id) {
-        MeetingRoomCombo::withTrashed()->where('id', $id)->restore();
+        $meetingroom = MeetingRoomCombo::withTrashed()->where('id', $id)->first();
+        $meetingroom->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Meeting Room Combo - ' . $meetingroom->code . ' - ' . $meetingroom->name,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
         return redirect()->route('admin.mrooms-combo.index')->with(['success' => 'Meeting room is successfully restored.']);
     }
 

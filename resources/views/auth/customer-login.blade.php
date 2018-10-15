@@ -13,7 +13,7 @@ Sign in | Bayanihan Center
     <!-- /.login-logo -->
     <div class="login-box-body">
         <p class="login-box-msg">Bayanihan Center CLIENT Log-in</p>
-
+        @include('inc.messages')
         <form action="{{ route('client.login.submit') }}" method="post">
             @csrf
             <div class="form-group has-feedback">
@@ -33,7 +33,7 @@ Sign in | Bayanihan Center
             </div>
         </form>
         <br>
-        <a href="#">I forgot my password</a><br>
+        <a href="{{ route('client.forgot-password') }}">I forgot my password</a><br>
         <a href="{{ route('client.register') }}" class="text-center">Register a new membership</a>
     </div>
   <!-- /.login-box-body -->

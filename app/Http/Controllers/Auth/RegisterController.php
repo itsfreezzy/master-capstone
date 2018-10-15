@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Auth\Events\Registered;
+use Auth, App\UserLog;
 
 class RegisterController extends Controller
 {
@@ -68,6 +69,12 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Created Admin Acc - ' . $data['fullname'],
+            'date' => date('Y-m-d h:i:s')
+        ]);
+
         return User::create([
             'fullname' => $data['fullname'],
             'username' => $data['username'],

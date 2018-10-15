@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\EventSetup;
 use Validator;
+use App\UserLog, Auth;
 
 class EventSetupController extends Controller
 {
@@ -38,6 +39,12 @@ class EventSetupController extends Controller
         $eventsetup->setup = $request->input('addSetupType');
         $eventsetup->save();
 
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Added Event Setup - ' . $eventsetup->id . ' - ' . $eventsetup->setup,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.setup.index')->with(['success' => 'Event Setup is successfully added to the database.']);
     }
 
@@ -64,6 +71,12 @@ class EventSetupController extends Controller
 
         if ($eventsetup->isDirty()) {
             $eventsetup->save();
+
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated Event Setup - ' . $eventsetup->id . ' - ' . $eventsetup->setup,
+                'date' => date('Y-m-d h:i:s'),
+            ]);
             
             return redirect()->route('admin.setup.index')->with(['success' => 'Event Setup is successfully updated.']);
         }
@@ -74,14 +87,30 @@ class EventSetupController extends Controller
     
     public function destroy($id)
     {
-        EventSetup::find($id)->delete();
+        $eventsetup = EventSetup::find($id);
+        $eventsetup->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Event Setup - ' . $eventsetup->id . ' - ' . $eventsetup->setup,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.setup.index')->with(['success' => 'Event Setup is successfully deleted.']);
     }
 
 
     public function restore($id)
     {
-        EventSetup::withTrashed()->where('id', $id)->restore();
+        $eventsetup = EventSetup::withTrashed()->where('id', $id)->first();
+        $eventsetup->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Event Setup - ' . $eventsetup->id . ' - ' . $eventsetup->setup,
+            'date' => date('Y-m-d h:i:s'),
+        ]);
+
         return redirect()->route('admin.setup.index')->with(['success' => 'Event Setup is successfully restored.']);
     }
 

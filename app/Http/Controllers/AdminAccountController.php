@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Auth, Validator, Hash;
+use Auth, Validator, Hash, App\UserLog;
 use App\User;
 
 class AdminAccountController extends Controller
@@ -36,6 +36,12 @@ class AdminAccountController extends Controller
         if ($user->isDirty()) {
             $user->save();
 
+            UserLog::create([
+                'userid' => Auth::guard('web')->user()->id,
+                'action' => 'Updated User Type - ' . $user->fullname,
+                'date' => date('Y-m-d h:i:s')
+            ]);
+
             return redirect()->route('admin.users.index')->with(['success' => 'User type successfully updated.']);
         }
         
@@ -43,12 +49,27 @@ class AdminAccountController extends Controller
     }
 
     public function destroy(Request $request, $id) {
-        User::find($id)->delete();
+        $user = User::find($id);
+        $user->delete();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Deactivated Admin Acc - ' . $user->fullname,
+            'date' => date('Y-m-d h:i:s')
+        ]);
+
         return redirect()->route('admin.users.index')->with(['success' => 'User successfully deactivated.']);
     }
 
     public function restore(Request $request, $id) {
-        User::withTrashed()->where('id', $id)->restore();
+        $user = User::withTrashed()->where('id', $id)->first();
+        $user->restore();
+
+        UserLog::create([
+            'userid' => Auth::guard('web')->user()->id,
+            'action' => 'Activated Admin Acc - ' . $user->fullname,
+            'date' => date('Y-m-d h:i:s')
+        ]);
         
         return redirect()->route('admin.users.index')->with(['success' => 'User successfully restored.']);
     }

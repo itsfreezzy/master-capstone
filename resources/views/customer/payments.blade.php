@@ -370,6 +370,7 @@ $(function() {
         $($payments).each(function(index, payment) {
             if (payment.reservationcode == selectedreservation) {
                 paymentexists = true;
+
                 $.each($reservations, function(index, value) {
                     if (selectedreservation == value.code) {
                         if (selpaymenttype.val() == 'Security Deposit') {
@@ -378,9 +379,14 @@ $(function() {
                         } else if (selpaymenttype.val() == 'Reservation Fee') {
                             $('#pmtamt').attr('max', 5000);
                             $('#pmtamt').attr('min', 5000);
+                        } else if (selpaymenttype.val() == '50% Downpayment') {
+                            $('#pmtamt').attr('min', ((value.total - 10000) / 2));
+                            $('#pmtamt').attr('max', ((value.total - 10000) / 2));
+                        } else if (selpaymenttype.val() == '50& Full Payment') {
+                            $('#pmtamt').attr('min', value.total - 10000);
+                            $('#pmtamt').attr('max', value.total - 10000);
                         }
-                        $('#pmtamt').attr('min', 1);
-                        $('#pmtamt').attr('max', value.balance);
+
                         return false;
                     }
                 });
@@ -446,6 +452,56 @@ $(function() {
         }
     });
 
+    $('#paymenttype').on('change', function() {
+        var res = $('#selreservationcode').val();
+        var selpt = $(this).val();
+
+        $($payments).each(function(index, payment) {
+            if (payment.reservationcode == res) {
+                $.each($reservations, function(index, value) {
+                    if (res == value.code) {
+                        console.log(value);
+                        if (selpt == 'Security Deposit') {
+                            $('#pmtamt').attr('max', 10000);
+                            $('#pmtamt').attr('min', 10000);
+                        } else if (selpt == 'Reservation Fee') {
+                            $('#pmtamt').attr('max', 5000);
+                            $('#pmtamt').attr('min', 5000);
+                        } else if (selpt == '50% Downpayment') {
+                            $('#pmtamt').attr('min', ((value.total - 10000) / 2));
+                            $('#pmtamt').attr('max', ((value.total - 10000) / 2));
+                        } else if (selpt == '50% Full Payment') {
+                            $('#pmtamt').attr('min', value.total - 10000);
+                            $('#pmtamt').attr('max', value.total - 10000);
+                        }
+                        return false;
+                    }
+                });
+
+                return false;
+            }
+        });
+    });
+
+    $('#pmtamt').on({
+        keyup: function() {
+            limitPaymentAmt($payments, $reservations);
+        },
+        change: function() {
+            limitPaymentAmt($payments, $reservations);
+        },
+        mouseover: function() {
+            limitPaymentAmt($payments, $reservations);
+        },
+        mouseout: function() {
+            limitPaymentAmt($payments, $reservations);
+        }
+    });
+
+    $('#pmtamt').blur(function() {
+        limitPaymentAmt($payments, $reservations);
+    });
+
     $('#tblPayments').DataTable();
     $('[data-toggle="tooltip"]').tooltip();
     $('#selreservationcode').select2({
@@ -466,5 +522,39 @@ $(function() {
         $("#modalCreate .modal-body input").val("");
     });
 });
+
+function limitPaymentAmt($payments, $reservations) {
+    var selpt = $('#paymenttype').val();
+    var reservation = $('#selreservationcode').val();
+
+    $($payments).each(function(index, payment) {
+        if (payment.reservationcode == reservation) {
+            $.each($reservations, function(index, value) {
+                if (reservation == value.code) {
+                    if (selpt == 'Security Deposit') {
+                        $('#pmtamt').attr('max', 10000);
+                        $('#pmtamt').attr('min', 10000);
+                        $('#pmtamt').val(10000);
+                    } else if (selpt == 'Reservation Fee') {
+                        $('#pmtamt').attr('max', 5000);
+                        $('#pmtamt').attr('min', 5000);
+                        $('#pmtamt').val(5000);
+                    } else if (selpt == '50% Downpayment') {
+                        $('#pmtamt').attr('min', ((value.total - 10000) / 2));
+                        $('#pmtamt').attr('max', ((value.total - 10000) / 2));
+                        $('#pmtamt').val(((value.total - 10000) / 2));
+                    } else if (selpt == '50% Full Payment') {
+                        $('#pmtamt').attr('min', value.total - 10000);
+                        $('#pmtamt').attr('max', value.total - 10000);
+                        $('#pmtamt').val(value.total - 10000);
+                    }
+                    return false;
+                }
+            });
+
+            return false;
+        }
+    });
+}
 </script>
 @endsection

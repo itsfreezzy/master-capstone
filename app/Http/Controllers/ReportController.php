@@ -13,8 +13,11 @@ use App\Payment;
 use App\Charts\SampleChart;
 use App\EventVenue;
 use App\EventNature;
+use App\MeetingRoom, App\FunctionHall;
 use Illuminate\Support\Facades\DB;
+use Auth;
 use Validator;
+use PDF;
 
 class ReportController extends Controller
 {
@@ -299,16 +302,137 @@ class ReportController extends Controller
     public function generateReservationReport(Request $request) {
         $validator = Validator::make($request->all(), [
             'daterange' => 'required',
-            'functionrooms' => 'required',
-            'natures' => 'required',
-            'status' => 'required',
         ]);
 
         if ($validator->fails()) {
             return redirect()->route('admin.reports.reservation')->withErrors($validator)->withInput()->with(['error' => 'Please select a date range.']);
         }
 
+        $dates = explode('|', $request->daterange);
+        $dates[0] = $dates[0] . ' 00:00:00';
+        $dates[1] = $dates[1] . ' 23:59:59';
 
+        //###############################################################################################################
+        // Reservations Per Function Room
+        //###############################################################################################################
+        $resperfunchall = DB::table('tbleventvenue')
+                    ->join('tblreservations', 'tbleventvenue.reservationcode', '=', 'tblreservations.code')
+                    ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
+                    ->join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')
+                    ->select(DB::raw('COUNT(*) as reservationctr, tblfunctionhalls.name, tbleventvenue.venuecode'))
+                    ->whereRaw('tblreservations.datefiled >= ? AND tblreservations.datefiled <= ?', $dates)
+                    ->groupBy('tbleventvenue.venuecode', 'tblfunctionhalls.name')
+                    ->orderBy('reservationctr', 'DESC')
+                    ->get();
+        $respermr = DB::table('tbleventvenue')
+                    ->join('tblreservations', 'tbleventvenue.reservationcode', '=', 'tblreservations.code')
+                    ->join('tblreservationinfo', 'tblreservationinfo.id', '=', 'tblreservations.reservationinfoid')
+                    ->join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')
+                    ->select(DB::raw('COUNT(*) as reservationctr, tblmeetingrooms.name, tbleventvenue.venuecode'))
+                    ->whereRaw('tblreservations.datefiled >= ? AND tblreservations.datefiled <= ?', $dates)
+                    ->groupBy('tbleventvenue.venuecode', 'tblmeetingrooms.name')
+                    ->orderBy('reservationctr', 'DESC')
+                    ->get();
+
+        //###############################################################################################################
+        // Reservations Per Event Nature
+        //###############################################################################################################
+        $eventnatures = array();
+        $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
+                ->whereRaw('tblreservations.datefiled >= ? AND tblreservations.datefiled <= ?', $dates)
+                ->get();
+
+        foreach ($reseventnatureondb as $eventnature) {
+            foreach (explode(",", $eventnature->eventnature) as $events) {
+                $eventnatures[$events] = 0;
+            }
+        }
+
+        foreach ($eventnatures as $key => $value) {
+            foreach ($reseventnatureondb as $eventnature) {
+                foreach (explode(",", $eventnature->eventnature) as $events) {
+                    if ($key == $events) {
+                        $eventnatures[$key] += 1;
+                    }
+                }
+            }
+        }
+
+
+        //###############################################################################################################
+        // Reservations Per Status
+        //###############################################################################################################
+        $resstatondb = DB::table('tblreservations')
+                        ->select(DB::raw('status, count(*) as ctr'))
+                        ->whereRaw('tblreservations.datefiled >= ? AND tblreservations.datefiled <= ?', $dates)
+                        ->groupBy('status')
+                        ->get();
+
+        $en = ReservationInfo::select('eventnature')->get();
+        $natures = [];
+        foreach ($en as $e) {
+            if (strpos($e, ',') !== false) {
+                foreach(explode(',', $e->eventnature) as $nature) {
+                    if (!in_array($nature, $natures)) {
+                        array_push($natures, $nature);
+                    }
+                }
+            } else {
+                if (!in_array($e->eventnature, $natures)) {
+                    array_push($natures, $e->eventnature);
+                }
+            }
+        }
+
+        $functionhalls = FunctionHall::withTrashed()->get();//EventVenue::join('tblfunctionhalls', 'tblfunctionhalls.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'FH%')->groupBy('name')->get();
+        $meetingrooms = MeetingRoom::withTrashed()->where('name', 'NOT LIKE', '%old%')->get();//EventVenue::join('tblmeetingrooms', 'tblmeetingrooms.code', '=', 'tbleventvenue.venuecode')->select('name')->where('venuecode', 'LIKE', 'MR%')->groupBy('name')->get();
+        $totalreservations = Reservation::withTrashed()->count();
+        $resperstatus = Reservation::withTrashed()->select(DB::raw('count(*) as total, status'))->groupBy('status')->get();
+
+        $arrMeetingRooms = array();
+        foreach ($meetingrooms as $mr) {
+            $arrMeetingRooms[$mr->name] = 0;
+            foreach ($respermr as $res) {
+                if ($mr->code == $res->venuecode) {
+                    $arrMeetingRooms[$mr->name] = $res->reservationctr;
+                    break;
+                }
+            }
+        }
+
+        $arrFunctionHalls= array();
+        foreach ($functionhalls as $fh) {
+            $arrFunctionHalls[$fh->name] = 0;
+            foreach ($resperfunchall as $res) {
+                if ($fh->code == $res->venuecode) {
+                    $arrFunctionHalls[$fh->name] = $res->reservationctr;
+                    break;
+                }
+            }
+        }
+        // dd([
+        //     'resperfunchall' => $resperfunchall,
+        //     'respermr' => $respermr,
+        //     'eventnatures' => $eventnatures,
+        //     'functionhalls' => $functionhalls,
+        //     'meetingrooms' => $meetingrooms,
+        //     'totalreservations' => $totalreservations,
+        // ]);
+
+        $pdf = PDF::loadView('forms.reservation-report', compact('resperfunchall', 'respermr', 'eventnatures', 'functionhalls', 'meetingrooms', 'totalreservations', 'dates', 'resperstatus', 'arrFunctionHalls', 'arrMeetingRooms'));
+        return $pdf->stream('reservation-report_' . time() . '.pdf'); 
+        
+        // return view('admin.reports-reservation')->with([
+        //     'resperfunchall' => $resperfunchall,
+        //     'respermr' => $respermr,
+        //     'eventnatures' => $eventnatures,
+        //     'functionhalls' => $functionhalls,
+        //     'meetingrooms' => $meetingrooms,
+        //     'totalreservations' => $reservations,
+        // ]);
+        
+        // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
+        // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
     }
     
     public function sales() {
@@ -385,11 +509,89 @@ class ReportController extends Controller
     }
 
     public function generateSalesReport(Request $request) {
-        //
+
+        // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
+        // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
     }
 
     public function miscIndex() {
         return view('admin.reports-misc');
+    }
+
+    public function generateReservationHistory(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $reservations = Reservation::withTrashed()
+                            ->join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
+                            ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                            ->select(DB::raw('tblreservations.code, tblreservations.eventtitle, tblcustomers.name, tblreservations.datefiled, tblreservations.status, tblreservations.eventdate, tblreservationinfo.timestart, tblreservationinfo.timeend'))
+                            ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                            ->orderBy('tblreservations.created_at', 'desc')
+                            ->get();
+        
+        $pdf = PDF::loadView('forms.reservation-history', compact('reservations', 'date'));
+        return $pdf->stream('Reservation History - ' . $date[0] . ' - ' . $date[1] . '.pdf');
+
+        // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
+        // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
+    }
+
+    public function generatePaymentHistory(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $payments = Payment::withTrashed()
+                        ->join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')
+                        ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                        ->select(DB::raw('tblpayments.*, tblreservations.eventtitle, tblcustomers.name, tblreservations.total as totalbal'))
+                        ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                        ->orderBy('tblreservations.code', 'asc')
+                        ->orderBy('tblpayments.created_at', 'desc')
+                        ->get();
+        $totpayments = count($payments);
+
+        $pdf = PDF::loadView('forms.payment-history', compact('payments', 'date', 'totpayments'));
+        return $pdf->stream('Payment History - ' . $date[0] . ' - ' . $date[1] . '.pdf');
+    }
+
+    public function generateCustWithBal(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $customers = Customer::withTrashed()
+                        ->join('tblreservations', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                        ->join('tblpayments', 'tblreservations.code', '=', 'tblpayments.reservationcode')
+                        ->select(DB::raw('tblcustomers.code, tblcustomers.name, tblreservations.eventtitle, tblreservations.balance'))
+                        ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                        ->where('balance', '>', '0')
+                        ->orderBy('tblcustomers.code', 'asc')
+                        ->orderBy('tblreservations.code', 'asc')
+                        ->get();
+        dd($customers);
+
+        // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
+        // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
+    }
+
+    public function generateActivityLog(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+        
+        $activitylog = UserLog::join('users', 'users.id', '=', 'userlog.userid')
+                        ->whereRaw('userlog.date >= ? AND userlog.date <= ?', $date)
+                        ->orderBy('date', 'desc')
+                        ->get();
+
+        $pdf = PDF::loadView('forms.activitylog', compact('activitylog', 'date'));
+        return $pdf->stream('ActivityLog' . $date[0] . ' - ' . $date[1] . '.pdf');
+
+        // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
+        // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
     }
 
     function random_color_part() {

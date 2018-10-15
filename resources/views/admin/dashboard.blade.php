@@ -57,9 +57,9 @@ Bayanihan Center | Dashboard
     <div class="col-lg-4 col-xs-4">
         <div class="small-box bg-yellow">
             <div class="inner">
-            <h3>{{ $pendingreservations }}</h3>
+            <h3>{{ $paymentstoday }}</h3>
 
-            <p>Pending Reservations</p>
+            <p>Payments Today</p>
             </div>
             <div class="icon">
             <i class="ion ion-android-more-horizontal"></i>
