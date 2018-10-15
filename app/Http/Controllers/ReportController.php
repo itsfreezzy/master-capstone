@@ -241,7 +241,6 @@ class ReportController extends Controller
         foreach ($eventnatures as $key => $value) {
             $respereventnaturechart->dataset($key, 'bar', array($value));
         }
-        // dd($respereventnaturechart);
 
 
         //###############################################################################################################
@@ -458,48 +457,6 @@ class ReportController extends Controller
                 $depositcharge += $payment->amount;
             }
         }
-        // $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->get();
-
-        // $cancelledreservations = Reservation::onlyTrashed()
-        //                         ->join('tblpayments', 'tblpayments.reservationcode', '=', 'tblreservations.code')
-        //                         ->whereIn('paymenttype', ['50% Downpayment', '50% Full Payment'])
-        //                         ->select('reservationcode', DB::raw('tblreservations.deleted_at as deleted_at'), 'tblreservations.eventdate', DB::raw('SUM(amount) as paid'))
-        //                         ->groupBy('reservationcode', 'deleted_at', 'eventdate')
-        //                         ->get();
-        // foreach ($cancelledreservations as $res) {
-        //     if (date_diff(date_create($res->eventdate . "00:00:00"), date_create($res->deleted_at))->m > 1 ) {
-        //         $cancelledressales += ($res->paid - 5000) / 2;
-        //     } else {
-        //         $cancelledressales += ($res->paid - 5000);
-        //     }
-        // }
-        // dd($cancelledreservations);
-        //###############################################################################################################
-        // Sales Percentage Chart
-        //###############################################################################################################
-        // $eventnatures = array();
-        // $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)->take(5)->get();
-
-        // foreach ($reseventnatureondb as $eventnature) {
-        //     foreach (explode(",", $eventnature->eventnature) as $events) {
-        //         $eventnatures[$events] = 0;
-        //     }
-        // }
-
-        // foreach ($eventnatures as $key => $value) {
-        //     foreach ($reseventnatureondb as $eventnature) {
-        //         foreach (explode(",", $eventnature->eventnature) as $events) {
-        //             if ($key == $events) {
-        //                 $eventnatures[$key] += 1;
-        //             }
-        //         }
-        //     }
-        // }
-
-        // $respereventnaturechart = new SampleChart;
-        // foreach ($eventnatures as $key => $value) {
-        //     $respereventnaturechart->dataset($key, 'bar', array($value))->color($this->random_color());
-        // }
 
         return view('admin.reports-sales');
     }

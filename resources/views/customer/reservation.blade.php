@@ -280,7 +280,7 @@ $(function() {
                         '<input class="form-control" type="text" value="'+ disp_equip_id[key] +'" readonly>'+
                     '</div>'+
                     '<div class="col-sm-2">'+
-                        '<input class="form-control" onkeyup="computePrice('+eid[key]+', this)" onchange="computePrice('+eid[key]+', this)" id="prodlimit'+eid[key]+'" type="number" name="'+$qty[key]+'" min="1" required>'+
+                        '<input class="form-control" onkeyup="computePrice('+eid[key]+', this)" name="quantity[]" onchange="computePrice('+eid[key]+', this)" id="prodlimit'+eid[key]+'" type="number" val="'+$qty[key]+'" min="1" required>'+
                     '</div>'+
                     '<div class="col-sm-2">'+
                         '<input type="text" data-id="total" name="total[]" data-e_id="'+eid[key]+'" class="form-control" id="equipTotal'+eid[key]+'" readonly value="'+$tot[key]+'">' +

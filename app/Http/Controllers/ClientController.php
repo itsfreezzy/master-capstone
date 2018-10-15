@@ -71,7 +71,7 @@ class ClientController extends Controller
     }
     
     public function goToPaymentsPage() {
-        $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->where('tblreservations.customercode', Auth::guard('customer')->user()->code)->get();
+        $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->select(DB::raw('tblpayments.*, tblreservations.code as rescode'))->where('tblreservations.customercode', Auth::guard('customer')->user()->code)->get();
         $customers = Customer::withTrashed()->get();
         $reservations = Reservation::where('customercode', Auth::guard('customer')->user()->code)->withTrashed()->get();
 
@@ -88,6 +88,7 @@ class ClientController extends Controller
                         ->select('tblreservations.*')
                         ->where('customercode', '=', Auth::guard('customer')->user()->code)
                         ->where('status', 'Confirmed')
+                        ->where('balance', '>', 0)
                         ->orderBy('created_at', 'DESC')
                         ->get();
 
@@ -930,25 +931,6 @@ class ClientController extends Controller
         }
 
         $res = $this->computeTotalPrice($reservation, $reservationinfo, true); //returned an instance of current reservation
-        // dd('im here');
-        // $funcroom = EventVenue::where('reservationcode', $reservation->code)->firstOrFail();
-        // $funcroom = explode('-', $funcroom->venuecode);
-        
-        // if ($funcroom[0] == 'FH') {
-        //     \Mail::to($customer->email)->send(new NewReservationToUser($reservation, $customer, 'FH'));
-        //     \Mail::to($reservation->eoemail)->send(new NewReservationToUser($reservation, $customer, 'FH'));
-        // } elseif ($funcroom[0] == 'MR') {
-        //     \Mail::to($customer->email)->send(new NewReservationToUser($reservation, $customer, 'MR'));
-        //     \Mail::to($reservation->eoemail)->send(new NewReservationToUser($reservation, $customer, 'FH'));
-        // }
-
-        // $users = User::all();
-        // $cc = array();
-        // foreach ($users as $user) {
-        //     array_push($cc, $user->email);
-        // }
-        // $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
-        // \Mail::to($cc)->send(new UpdateReservation($reservation, $customer));
 
         return redirect()->route('client.landingpage')->with(['success' => 'Reservation information successfully updated.']);
     }
@@ -1097,8 +1079,6 @@ class ClientController extends Controller
             }
             
             
-        } else {
-            return dd("ERROR");
         }
 
         if ($discountedPrice) {
@@ -1270,6 +1250,8 @@ class ClientController extends Controller
             'seccontactinfo.email' => 'sometimes|nullable|required_with:seccontactinfo.name|email',
             'seccontactinfo.address' => 'sometimes|nullable|required_with:seccontactinfo.name',
             'consent' => 'accepted',
+            'quantity' => 'required',
+            'total' => 'required'
         ];
     }
 

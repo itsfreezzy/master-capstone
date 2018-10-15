@@ -164,7 +164,6 @@ class MeetingRoomController extends Controller
     }
 
     public function comboStore(Request $request) {
-        dd($request->all());
         $validator = Validator::make($request->all(), [
             'comboname' => 'bail|required|unique:tblmeetroomdiscount,name',
             'mrname' => 'required|min:2',

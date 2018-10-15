@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use App\Mail\PaymentVerified;
 use App\Mail\PaymentRejected;
 use App\Mail\SlotTaken;
-use App\EventVenue;
+use App\EventVenue, App\UserLog;
 
 class PaymentController extends Controller
 {

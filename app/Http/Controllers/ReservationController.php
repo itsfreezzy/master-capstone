@@ -122,8 +122,6 @@ class ReservationController extends Controller
             $eventvenues = EventVenue::join('tblfunctionhalls', 'tbleventvenue.venuecode', '=', 'tblfunctionhalls.code')
                             ->where('reservationcode', $reservation->code)
                             ->get();
-        } else {
-            return dd("ERROR");
         }
         
         

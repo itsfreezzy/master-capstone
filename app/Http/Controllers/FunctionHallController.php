@@ -263,7 +263,6 @@ class FunctionHallController extends Controller
         ], $messages);
 
         if ($validator->fails()) {
-            dd($validator);
             return redirect()
                         ->route('admin.fhalls-combo.index')
                         ->with([

@@ -173,7 +173,7 @@ Bayanihan Center | Dashboard
                         <th style="width: 3%">Actions</th>
                     </thead>
                     <tbody>
-                        <tr>
+                            <tr>
                             @foreach ($reservations as $reservation)
                             @if (date_diff(date_create(date("Y-m-d")), date_create($reservation->eventdate))->format("%a") < 30)
                             <td>{{ $reservation->eventtitle }}</td>
@@ -198,8 +198,8 @@ Bayanihan Center | Dashboard
                             <td>{{ date("F d, Y", strtotime($reservation->eventdate)) }}</td>
                             <td><a class="btn btn-default" title="View Reservation Info" href="{{ route('admin.showreservationinfo', ['id' => $reservation->id]) }}"> <i class="fa fa-eye"></i></a></td>
                             @endif
-                            @endforeach
                         </tr>
+                            @endforeach
                     </tbody>
                 </table>
             </div>

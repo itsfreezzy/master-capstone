@@ -235,48 +235,6 @@ class WebNavigationController extends Controller
 
     
     public function test(Request $request) {
-        // $reservation = Reservation::where('code', 'RES-0003')->first();
-        // $customer = Customer::where('code', $reservation->customercode)->first();
-        // $reservationinfo = ReservationInfo::where('id', $reservation->reservationinfoid)->first();
-        // $eventequipments = DB::table('tbleventequipments')
-        //                     ->join('tblequipments', 'tbleventequipments.equipmentcode', '=', 'tblequipments.code')
-        //                     ->where('tbleventequipments.reservationcode', $reservation->code)
-        //                     ->get();
-        // $equipgrandtotal = 0;
-        // foreach ($eventequipments as $eventequipment) {
-        //     $equipgrandtotal += $eventequipment->totalprice;
-        // }
-        // $eventgrandtotal = 0;
-        
-        // $prefix = explode("-", EventVenue::where('reservationcode', $reservation->code)->first()->venuecode);
-        // if ($prefix[0] == 'FH') {
-        //     $eventvenues = EventVenue::join('tblfunctionhalls', 'tbleventvenue.venuecode', '=', 'tblfunctionhalls.code')
-        //                     ->where('reservationcode', $reservation->code)
-        //                     ->get();
-        // } elseif ($prefix[0] == 'MR') {
-        //     $eventvenues = EventVenue::join('tblfunctionhalls', 'tbleventvenue.venuecode', '=', 'tblfunctionhalls.code')
-        //                     ->where('reservationcode', $reservation->code)
-        //                     ->get();
-        // } else {
-        //     return dd("ERROR");
-        // }
-        
-        
-        // if (date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h > 5) {
-        //     foreach ($eventvenues as $eventvenue) {
-        //         $eventgrandtotal += $eventvenue->wholedayrate;
-        //     }
-        // } else {
-        //     foreach ($eventvenues as $eventvenue) {
-        //         $eventgrandtotal += $eventvenue->half;
-        //     }
-        // }
-
-        // $title = $reservation->code . '_' . time() . '.pdf';
-
-        // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title'));
-        // return $pdf->stream();
-        // return view('test');
         dd(Auth::guard('customer'));
         Session::flush();
         dd(session()->all());

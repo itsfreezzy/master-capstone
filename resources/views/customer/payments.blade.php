@@ -396,22 +396,21 @@ $(function() {
         });
 
         if (paymentexists) {
-            $($payments).each(function(index, payment) {
-                if (payment.reservationcode == selectedreservation) {
-                    paymentoptions.each(function() {
-                        if (payment.paymenttype == $(this).val() || $(this).val() == '' || $(this).val() == null) {
-                            $(this).prop('disabled', true);
-                        } else {
-                            $(this).prop('disabled', false);
-                        }
-                    });
-                    
-                    paymentoptions.each(function() {
-                        if (!$(this).attr('disabled')) {
-                            selpaymenttype.val($(this).val());
-                            return false;
-                        }
-                    });
+            $('#paymenttype option').each(function() {
+                var opt = $(this);
+                opt.prop('disabled', false);
+
+                $.each($payments, function(index, payment) {
+                    if (payment.reservationcode == selectedreservation && opt.val() == payment.paymenttype) {
+                        opt.prop('disabled', true);
+                    }
+                });
+            });
+
+            $('#paymenttype option').each(function() {
+                if (!$(this).attr('disabled') && $(this).val() != '' && $(this).val() != null) {
+                    $('#paymenttype').val($(this).val());
+                    return false;
                 }
             });
             
@@ -432,6 +431,7 @@ $(function() {
                 selpaymenttype.val('');
                 selpaymenttype.attr('disabled', true);
                 $('#pmtamt').attr('disabled', true);
+                $('#pmtamt').val('');
                 $('#paymentdate').attr('disabled', true);
                 $('#paymentproof').attr('disabled', true);
             } else {
@@ -446,6 +446,8 @@ $(function() {
                 
                 selpaymenttype.attr('disabled', false);
                 $('#pmtamt').attr('disabled', false);
+                $('#pmtamt').attr('min', 5000);
+                $('#pmtamt').attr('max', 5000);
                 $('#paymentdate').attr('disabled', false);
                 $('#paymentproof').attr('disabled', false);
             }
@@ -460,7 +462,6 @@ $(function() {
             if (payment.reservationcode == res) {
                 $.each($reservations, function(index, value) {
                     if (res == value.code) {
-                        console.log(value);
                         if (selpt == 'Security Deposit') {
                             $('#pmtamt').attr('max', 10000);
                             $('#pmtamt').attr('min', 10000);
@@ -468,11 +469,12 @@ $(function() {
                             $('#pmtamt').attr('max', 5000);
                             $('#pmtamt').attr('min', 5000);
                         } else if (selpt == '50% Downpayment') {
-                            $('#pmtamt').attr('min', ((value.total - 10000) / 2));
-                            $('#pmtamt').attr('max', ((value.total - 10000) / 2));
+                            $('#pmtamt').attr('min', ((value.total - 15000) / 2));
+                            $('#pmtamt').attr('max', ((value.total - 15000) / 2));
                         } else if (selpt == '50% Full Payment') {
-                            $('#pmtamt').attr('min', value.total - 10000);
-                            $('#pmtamt').attr('max', value.total - 10000);
+                            console.log(value.balance);
+                            $('#pmtamt').attr('min', (value.balance - 10000));
+                            $('#pmtamt').attr('max', (value.balance - 10000));
                         }
                         return false;
                     }
@@ -513,6 +515,10 @@ $(function() {
     @endif
 
     $('#modalCreate').on('hidden.bs.modal', function(e){
+        $('#selreservationcode').val('');
+        $('#selreservationcode').select2({
+            width: '100%'
+        });
         selpaymenttype.val('');
         selpaymenttype.attr('disabled', true);
         $('#pmtamt').attr('disabled', true);
@@ -540,13 +546,11 @@ function limitPaymentAmt($payments, $reservations) {
                         $('#pmtamt').attr('min', 5000);
                         $('#pmtamt').val(5000);
                     } else if (selpt == '50% Downpayment') {
-                        $('#pmtamt').attr('min', ((value.total - 10000) / 2));
-                        $('#pmtamt').attr('max', ((value.total - 10000) / 2));
-                        $('#pmtamt').val(((value.total - 10000) / 2));
+                        $('#pmtamt').attr('min', ((value.total - 15000) / 2));
+                        $('#pmtamt').attr('max', ((value.total - 15000) / 2));
                     } else if (selpt == '50% Full Payment') {
-                        $('#pmtamt').attr('min', value.total - 10000);
-                        $('#pmtamt').attr('max', value.total - 10000);
-                        $('#pmtamt').val(value.total - 10000);
+                        $('#pmtamt').attr('min', (value.balance - 10000));
+                        $('#pmtamt').attr('max', (value.balance - 10000));
                     }
                     return false;
                 }
