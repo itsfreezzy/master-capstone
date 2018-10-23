@@ -71,7 +71,7 @@ class ClientController extends Controller
     }
     
     public function goToPaymentsPage() {
-        $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->select(DB::raw('tblpayments.*, tblreservations.code as rescode'))->where('tblreservations.customercode', Auth::guard('customer')->user()->code)->get();
+        $payments = Payment::join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')->select(DB::raw('tblpayments.*, tblreservations.code as rescode'))->where('tblreservations.customercode', Auth::guard('customer')->user()->code)->orderBy('created_at', 'desc')->get();
         $customers = Customer::withTrashed()->get();
         $reservations = Reservation::where('customercode', Auth::guard('customer')->user()->code)->withTrashed()->get();
 
@@ -1226,6 +1226,7 @@ class ClientController extends Controller
             'EventOrganizerContactNo' => 'required|digits:11',
             'EventOrganizerEmail' => 'required|email',
             'EventDate' => 'required|after:+3 months|',
+            // 'EventDate' => 'required|',
             'EventTitle' => 'required|unique:tblreservations,eventtitle',
             'PrefFuncRooms' => 'required|',
             'CatererName' => 'required|',

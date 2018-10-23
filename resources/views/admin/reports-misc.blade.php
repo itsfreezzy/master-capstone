@@ -280,6 +280,7 @@ $(function() {
 	},
 	function (start, end) {
 		$('#paymenthist-dr span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
+		$('#paymenthistoryform').attr('target', '_blank');
 		$('#paymenthistrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
 		$('#paymenthistoryform').submit();
 	});
@@ -300,6 +301,7 @@ $(function() {
 	},
 	function (start, end) {
 		$('#reshist-dr span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
+		$('#reservationhistoryform').attr('target', '_blank');
 		$('#reshistrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
 		$('#reservationhistoryform').submit();
 	})
@@ -320,6 +322,7 @@ $(function() {
 	},
 	function (start, end) {
 		$('#custwithbal-dr span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
+		$('#custwithbalanceform').attr('target', '_blank');
 		$('#custwithbalrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
 		$('#custwithbalanceform').submit();
 	})
@@ -340,6 +343,7 @@ $(function() {
 	},
 	function (start, end) {
 		$('#activitylog-dr span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
+		$('#activitylogform').attr('target', '_blank');
 		$('#activitylogrange').val((new Date(start)).getFullYear() +'-'+ ('0'+(new Date(start).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(start)).getDate()).slice(-2) + '|' + (new Date(end)).getFullYear() +'-'+ ('0'+(new Date(end).getMonth() + 1)).slice(-2) +'-'+ ('0'+(new Date(end)).getDate()).slice(-2));
 		$('#activitylogform').submit();
 	})

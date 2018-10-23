@@ -74,9 +74,9 @@
             <li {{ (Request::is('admin/reports/reservation') ? 'class=active' : '') }}>
                 <a href="/admin/reports/reservation"><i class="fa fa-bar-chart"></i> <span>Reservation Report</span></a>
             </li>
-            <li {{ (Request::is('admin/reports/sales') ? 'class=active' : '') }}>
+            {{-- <li {{ (Request::is('admin/reports/sales') ? 'class=active' : '') }}>
                 <a href="/admin/reports/sales"><i class="fa fa-line-chart"></i> <span>Sales Report</span></a>
-            </li>
+            </li> --}}
             <li {{ (Request::is('admin/reports/misc') ? 'class=active' : '') }}>
                 <a href="/admin/reports/misc"><i class="fa fa-line-chart"></i> <span>Misc. Reports</span></a>
             </li>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
 
-    <title>{{ 'ActivityLog' . $date[0] . ' - ' . $date[1] . '.pdf' }}</title>
+    <title>Cancelled Reservations Report</title>
 
     <style>
         .table>thead>tr>th{
@@ -18,32 +18,36 @@
     <div class="container">
         <header>
             <h2 class="text-center"><strong>UNILAB Bayanihan Center</strong></h2>
-            <h2 class="text-center" style="margin-bottom: 0px; padding-botton: 0px"><strong>Customers with Balance</strong></h2><br>
+            <h2 class="text-center" style="margin-bottom: 0px; padding-botton: 0px"><strong>Done Reservations Report</strong></h2><br>
             <h4 class="text-center" style="margin-top: 0px; padding-top:0px"><strong>{{ date('F d, Y h:i:sA', strtotime($date[0])) }} - {{ date('F d, Y h:i:sA', strtotime($date[1])) }}</strong></h4><br>
         </header>
 
         <div class="content">
             <div class="row">
-                {{-- <h1 class="text-center">Total Number of Reservations : {{ count($reservations) }}</h1> --}}
-            </div>
-
-            <div class="row">
                 <table class="table table-stripped table-bordered">
                     <thead>
-                        <th>Customer Code</th>
-                        <th>Customer Name</th>
-                        <th>Event Title</th>
-                        <th>Balance</th>
+                        <th class="col-xs-1">Reservation Code</th>
+                        <th class="col-xs-2">Event Title</th>
+                        <th>Filed By</th>
+                        <th>Date Cancelled</th>
+                        <th>Reason for Cancellation</th>
+                        <th>Reservation Total</th>
                     </thead>
                     <tbody>
-                        @foreach ($customers as $cust)
+                        @foreach ($cancelledreservations as $pr)
                         <tr>
-                            <th>{{ $cust->code }}</th>
-                            <th>{{ $cust->name }}</th>
-                            <th>{{ $cust->eventtitle }}</th>
-                            <th>PhP {{ number_format($cust->balance, 2) }}</th>
+                            <th class="text-center">{{ $pr->code }}</th>
+                            <th class="text-center">{{ $pr->eventtitle }}</th>
+                            <th class="text-center">{{ $pr->name }}</th>
+                            <th class="text-center">{{ date('F d Y, h:i:sA', strtotime($pr->deleted_at)) }}</th>
+                            <th class="text-center">{{ $pr->cancelGrounds }}</th>
+                            <th class="text-center">PhP {{ number_format($pr->total, 2) }}</th>
                         </tr>
                         @endforeach
+                        <tr>
+                            <th colspan='4'><h4><strong>Total Amount for all Cancelled Reservations</strong></h4></th>
+                            <th colspan="2" class="text-center"><h4><strong>PhP {{ number_format($total, 2) }}</strong></h4></th>
+                        </tr>
                     </tbody>
                 </table>
             </div>

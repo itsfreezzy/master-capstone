@@ -26,6 +26,7 @@ class CreateReservationsTable extends Migration
             $table->string('eocontactno', 100);
             $table->string('eoemail', 100);
             $table->unsignedInteger('approvedby')->nullable();
+            $table->dateTime('dateApproved')->nullable();
             $table->boolean('isDone')->nullable();
             $table->dateTime('dateMarkedAsDone')->nullable();
             $table->string('cancelGrounds', 191)->nullable();

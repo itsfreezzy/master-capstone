@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\UserLog;
+use App\Reservation;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -25,13 +26,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->call(function () {
-        //     UserLog::create([
-        //         'userid' => '1',
-        //         'action' => 'hello',
-        //         'date' => date('Y-m-d h:i:s'),
-        //     ]);
-        // })->everyMinute();
+        $schedule->call(function () {
+            $reservations = Reservation::withTrashed()->get();
+
+            foreach ($reservations as $reservation) {
+                
+            }
+        });
     }
 
     /**

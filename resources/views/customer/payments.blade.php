@@ -133,6 +133,7 @@ PAYMENTS | USER - UNILAB Bayanihan Center
                                 <option value="50% Downpayment">50% Downpayment</option>
                                 <option value="50% Full Payment">50% Full Payment</option>
                                 <option value="Security Deposit">Security Deposit</option>
+                                <option value="Add-on">Add-on</option>
                             </select>
                         </div>
                     </div>
@@ -352,6 +353,7 @@ $(function() {
     var paymentoptions = $('#paymenttype option');
     var $reservations = @json($reservations);
     var $payments = @json($payments);
+    var pmtctr = 0;
 
     
     selpaymenttype.val('');
@@ -383,8 +385,16 @@ $(function() {
                             $('#pmtamt').attr('min', ((value.total - 10000) / 2));
                             $('#pmtamt').attr('max', ((value.total - 10000) / 2));
                         } else if (selpaymenttype.val() == '50& Full Payment') {
-                            $('#pmtamt').attr('min', value.total - 10000);
-                            $('#pmtamt').attr('max', value.total - 10000);
+                            $('#pmtamt').attr('min', value.balance - 10000);
+                            $('#pmtamt').attr('max', value.balance - 10000);
+                        } else if (selpaymenttype.val() == 'Add-on') {
+                            if (pmtctr == 3) {
+                                $('#pmtamt').attr('min', value.balance - 10000);
+                                $('#pmtamt').attr('max', value.balance - 10000);
+                            } else if (pmtctr > 3) {
+                                $('#pmtamt').attr('min', value.balance.toFixed(2));
+                                $('#pmtamt').attr('max', value.balance.toFixed(2));
+                            }
                         }
 
                         return false;
@@ -414,6 +424,27 @@ $(function() {
                 }
             });
             
+            pmtctr = 0;
+            var selectedres = null;
+            $.each($payments, function(index, pmt){
+                if (selectedreservation == pmt.reservationcode && (pmt.paymenttype == 'Reservation Fee' || pmt.paymenttype == '50% Downpayment' || pmt.paymenttype == '50% Full Payment' || pmt.paymenttype == 'Security Deposit')) {
+                    pmtctr++;
+                }
+            });
+            $.each($reservations, function(key, res){
+                if (res.code == selectedreservation) {
+                    selectedres = res;
+                    return false;
+                }
+            });
+
+            if (pmtctr >= 3 && selectedres.balance > 0) {
+                $('#paymenttype option[value="Add-on"]').prop('disabled', false);
+            } else {
+                $('#paymenttype').val('');
+                $('#paymenttype option[value="Add-on"]').prop('disabled', true);
+            }
+
             selpaymenttype.attr('disabled', false);
             $('#pmtamt').attr('disabled', false);
             $('#paymentdate').attr('disabled', false);
@@ -475,6 +506,14 @@ $(function() {
                             console.log(value.balance);
                             $('#pmtamt').attr('min', (value.balance - 10000));
                             $('#pmtamt').attr('max', (value.balance - 10000));
+                        } else if (selpt == 'Add-on') {
+                            if (pmtctr == 3) {
+                                $('#pmtamt').attr('min', (value.balance - 10000).toFixed(2));
+                                $('#pmtamt').attr('max', (value.balance - 10000).toFixed(2));
+                            } else if (pmtctr > 3) {
+                                $('#pmtamt').attr('min', value.balance.toFixed(2));
+                                $('#pmtamt').attr('max', value.balance.toFixed(2));
+                            }
                         }
                         return false;
                     }
@@ -487,16 +526,16 @@ $(function() {
 
     $('#pmtamt').on({
         keyup: function() {
-            limitPaymentAmt($payments, $reservations);
+            limitPaymentAmt($payments, $reservations, pmtctr);
         },
         change: function() {
-            limitPaymentAmt($payments, $reservations);
+            limitPaymentAmt($payments, $reservations, pmtctr);
         },
         mouseover: function() {
-            limitPaymentAmt($payments, $reservations);
+            limitPaymentAmt($payments, $reservations, pmtctr);
         },
         mouseout: function() {
-            limitPaymentAmt($payments, $reservations);
+            limitPaymentAmt($payments, $reservations, pmtctr);
         }
     });
 
@@ -504,7 +543,10 @@ $(function() {
         limitPaymentAmt($payments, $reservations);
     });
 
-    $('#tblPayments').DataTable();
+    $('#tblPayments').DataTable({
+        order: [],
+        pageLength: 25,
+    });
     $('[data-toggle="tooltip"]').tooltip();
     $('#selreservationcode').select2({
         width: '100%'
@@ -529,11 +571,11 @@ $(function() {
     });
 });
 
-function limitPaymentAmt($payments, $reservations) {
+function limitPaymentAmt($payments, $reservations, pmtctr) {
     var selpt = $('#paymenttype').val();
     var reservation = $('#selreservationcode').val();
 
-    $($payments).each(function(index, payment) {
+    $($payments).each(function(index, payment, pmtctr) {
         if (payment.reservationcode == reservation) {
             $.each($reservations, function(index, value) {
                 if (reservation == value.code) {
@@ -551,6 +593,14 @@ function limitPaymentAmt($payments, $reservations) {
                     } else if (selpt == '50% Full Payment') {
                         $('#pmtamt').attr('min', (value.balance - 10000));
                         $('#pmtamt').attr('max', (value.balance - 10000));
+                    } else if (selpt == 'Add-on') {
+                            if (pmtctr == 3) {
+                                $('#pmtamt').attr('min', value.balance - 10000);
+                                $('#pmtamt').attr('max', value.balance - 10000);
+                            } else if (pmtctr > 3) {
+                                $('#pmtamt').attr('min', value.balance.toFixed(2));
+                                $('#pmtamt').attr('max', value.balance.toFixed(2));
+                            }
                     }
                     return false;
                 }

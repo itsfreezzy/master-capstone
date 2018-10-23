@@ -257,6 +257,10 @@ Route::prefix('admin')->group(function() {
         Route::post('/reports/misc/payment-history', 'ReportController@generatePaymentHistory')->name('admin.reports.generate.payhist');
         Route::post('/reports/misc/customers-with-balance', 'ReportController@generateCustWithBal')->name('admin.reports.generate.custwithbal');
         Route::post('/reports/misc/activity-log', 'ReportController@generateActivityLog')->name('admin.reports.generate.actlog');
+        Route::post('/reports/reservation/pending/generate', 'ReportController@generatePendingReservations')->name('admin.reports.generate.pendingres');
+        Route::post('/reports/reservation/confirmed/generate', 'ReportController@generateConfirmedReservations')->name('admin.reports.generate.confirmedres');
+        Route::post('/reports/reservation/done/generate', 'ReportController@generateDoneReservations')->name('admin.reports.generate.doneres');
+        Route::post('/reports/reservation/cancelled/generate', 'ReportController@generateCancelledReservations')->name('admin.reports.generate.cancelledres');
 
 
         // MISC

@@ -212,7 +212,7 @@ class ReportController extends Controller
             array_push($colors, $this->random_color());
         }
         $resperfuncroomchart->labels($funcrooms);
-        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings); 
+        $resperfuncroomchart->dataset('SAMPLE', 'pie', $numofbookings)->backgroundColor($colors); 
 
 
         //###############################################################################################################
@@ -220,7 +220,6 @@ class ReportController extends Controller
         //###############################################################################################################
         $eventnatures = array();
         $reseventnatureondb = ReservationInfo::join('tblreservations', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $dates)->take(5)->get();
-
         foreach ($reseventnatureondb as $eventnature) {
             foreach (explode(",", $eventnature->eventnature) as $events) {
                 $eventnatures[$events] = 0;
@@ -237,10 +236,18 @@ class ReportController extends Controller
             }
         }
 
+        $en = array();
+        $res = array();
+        $colors = array();
         $respereventnaturechart = new SampleChart;
         foreach ($eventnatures as $key => $value) {
-            $respereventnaturechart->dataset($key, 'bar', array($value));
+            array_push($en, $key);
+            array_push($res, $value);
+            array_push($colors, $this->random_color()); 
         }
+        
+        $respereventnaturechart->labels($en);
+        $respereventnaturechart->dataset($key, 'pie', $res)->backgroundColor($colors);
 
 
         //###############################################################################################################
@@ -254,16 +261,18 @@ class ReportController extends Controller
 
         $status = array();
         $bookings = array();
+        $colors = array();
         
         foreach ($resstatondb as $q) {
             array_push($status, $q->status);
-            array_push($bookings, $q->ctr);   
+            array_push($bookings, $q->ctr);  
+            array_push($colors, $this->random_color());  
         }
 
         $resperstatchart = new SampleChart;
         $resperstatchart->displayAxes(false);
         $resperstatchart->labels($status);
-        $resperstatchart->dataset('SAMPLE', 'pie', $bookings);
+        $resperstatchart->dataset('SAMPLE', 'pie', $bookings)->backgroundColor($colors);
 
         $en = ReservationInfo::select('eventnature')->get();
         $natures = [];
@@ -527,8 +536,11 @@ class ReportController extends Controller
                         ->where('balance', '>', '0')
                         ->orderBy('tblcustomers.code', 'asc')
                         ->orderBy('tblreservations.code', 'asc')
+                        ->distinct()
                         ->get();
-        dd($customers);
+        
+        $pdf = PDF::loadView('forms.custwithbal', compact('customers', 'date'));
+        return $pdf->stream('cust-with-bal|' . date('Y-m-d h:i:s') . '.pdf');
 
         // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
         // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
@@ -549,6 +561,84 @@ class ReportController extends Controller
 
         // $pdf = PDF::loadView('forms.billing-statement', compact('customer', 'reservation', 'reservationinfo', 'eventvenues', 'eventequipments', 'equipgrandtotal', 'eventgrandtotal', 'title', 'prefix', 'discountedPrice'));
         // return $pdf->stream($reservation->code . '_' . time() . '.pdf');
+    }
+
+    public function generatePendingReservations(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $pendingreservations = Reservation::where('status', 'Pending')
+                        ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+        
+        $total = 0;
+        
+        foreach ($pendingreservations as $pr) {
+            $total += $pr->total;
+        }
+
+        $pdf = PDF::loadView('forms.pending-res', compact('pendingreservations', 'date', 'total'));
+        return $pdf->stream('pendingres' . $date[0] . ' - ' . $date[1] . '.pdf');
+    }
+
+    public function generateConfirmedReservations(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $confirmedreservations = Reservation::where('status', 'Confirmed')
+                        ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+        
+        $total = 0;
+        $totalbalance = 0;
+
+        foreach ($confirmedreservations as $cr) {
+            $total += $cr->total;
+            $totalbalance += $cr->balance;
+        }
+
+        $pdf = PDF::loadView('forms.confirmed-res', compact('confirmedreservations', 'date', 'total', 'totalbalance'));
+        return $pdf->stream('confirmedres' . $date[0] . ' - ' . $date[1] . '.pdf');
+    }
+
+    public function generateDoneReservations(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $donereservations = Reservation::where('status', 'Done')
+                        ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+        
+        $total = 0;
+
+        foreach ($donereservations as $dr) {
+            $total += $dr->total;
+        }
+
+        $pdf = PDF::loadView('forms.done-res', compact('donereservations', 'date', 'total'));
+        return $pdf->stream('doneres' . $date[0] . ' - ' . $date[1] . '.pdf');
+    }
+
+    public function generateCancelledReservations(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        $cancelledreservations = Reservation::withTrashed()->where('status', 'Cancelled')
+                        ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+        
+        $total = 0;
+
+        foreach ($cancelledreservations as $cr) {
+            $total += $cr->total;
+        }
+
+        $pdf = PDF::loadView('forms.cancelled-res', compact('cancelledreservations', 'date', 'total'));
+        return $pdf->stream('cancelledres' . $date[0] . ' - ' . $date[1] . '.pdf');
     }
 
     function random_color_part() {

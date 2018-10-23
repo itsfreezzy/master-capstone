@@ -233,41 +233,6 @@ class WebNavigationController extends Controller
                     ->count();
     }
 
-    
-    public function test(Request $request) {
-        dd(Auth::guard('customer'));
-        Session::flush();
-        dd(session()->all());
-
-        return $request->url();
-
-        try {
-            // start the backup process
-            Artisan::call('backup:run');
-            $output = Artisan::output();
-            // log the results
-            Log::info("Backpack\BackupManager -- new backup started from admin interface \r\n" . $output);
-            // return the results as a response to the ajax call
-            // Alert::success('New backup created');
-            return '1';
-        } catch (Exception $e) {
-            Flash::error($e->getMessage());
-            return $e->getMessage();
-        }
-
-
-        dd((session('equiptotal') + session('eventtotal') + 15000));
-
-        $reservation = Reservation::where('code', 'RES-0001')->firstOrFail();
-        $reservationinfo = ReservationInfo::where('id', $reservation->reservationinfoid)->first();
-        dd(date_diff(date_create($reservationinfo->timeend), date_create($reservationinfo->timestart))->h);
-        // DB::table('tblreservations')->decrement('balance', 10000);
-        // DB::table('tblreservations')->increment('paid', 10000);
-        $customer = Customer::where('code', $reservation->customercode)->firstOrFail();
-        $payment = Payment::where('reservationcode', $reservation->code)->where('status', '!=', 'Rejected')->orderBy('created_at', 'DESC')->firstOrFail();
-        return (new PaymentVerified($customer, $reservation, $payment))->render();
-    }
-
 
     public function getRoomsAvailability(Request $request) {
         if ($request->type == 'FH') {
@@ -306,5 +271,63 @@ class WebNavigationController extends Controller
     
     function random_color() {
         return '#' . $this->random_color_part() . $this->random_color_part() . $this->random_color_part();
+    }
+
+    
+    public function test() {
+        $reservations = Reservation::all();
+
+        foreach ($reservations as $reservation) {
+            $date = strtotime(date('Y-m-d h:i:s', strtotime($reservation->created_at)));
+            $date = strtotime('+7 days', $date);
+
+            if ($reservation->status == 'Pending') {
+                if (date_diff(date_create($reservation->created_at), date_create(date('Y-m-d h:i:s')))->days > 7) {
+                    $reservation->status = 'Cancelled';
+                    $reservation->cancelGrounds = 'Non-payment of reservation fee';
+                    // $reservation->delete();
+
+                    // \Mail::to()->cc()->send(new NonPaymentOfReservation());
+                } else if (date_diff(date_create($reservation->created_at), date_create(date('Y-m-d h:i:s')))->days < 7 && date_diff(date_create($reservation->created_at), date_create(date('Y-m-d h:i:s')))->days > 0){ 
+                    // \Mail::to()->cc()->send(new PaymentReminder());
+                }
+            } else if ($reservation->status == 'Confirmed') {
+                $dp = true;
+                $fp = true;
+                $sd = true;
+                $deadline = strtotime(date('Y-m-d h:i:s', strtotime($reservation->created_at)));
+                $deadline = strtotime('+30 days', $deadline);
+                $deadline = date('Y-m-d h:i:s', $deadline);
+                dd(date_diff(date_create($reservation->created_at), date_create(date('Y-m-d h:i:s'))));
+
+                if (count( Payment::where('reservationcode', $reservation->code)->where('paymenttype', '50% Downpayment')->get() ) == 0) {
+                    $dp = false;
+
+                    if (date_diff(date_create($created_at), date_create(date('Y-m-d h:i:s')))->days > 30 && date_diff(date_create($deadline), date_create(date('Y-m-d h:i:s')))->invert == 0) {
+                        $reservation->status = 'Cancelled';
+                        $reservation->cancelGrounds = 'Non-payment of 50% Downpayment';
+                        // $reservation->delete();
+                        
+                        // \Mail::to()->cc()->send(new NonPaymentOfDP());
+                    } else if (date_diff(date_create($created_at), date_create(date('Y-m-d h:i:s')))->days <= 30 && date_diff(date_create($deadline), date_create(date('Y-m-d h:i:s')))->days > 23) {
+                        // \Mail::to()->cc()->send(new PaymentReminder());
+                    }
+                }
+
+                if ($dp && count( Payment::where('reservationcode', $reservation->code)->where('paymenttype', '50% Full Payment')->get() ) == 0) {
+                    $deadline = strtotime(date('Y-m-d h:i:s', strtotime($reservation->eventdate)));
+                    $deadline = strtotime('-30 days', $deadline);
+                    $deadline = date('Y-m-d h:i:s', $deadline);
+                    $fp = false;
+                }
+
+                if ($dp && $fp && count( Payment::where('reservationcode', $reservation->code)->where('paymenttype', 'Security Deposit')->get() ) == 0) {
+                    $deadline = strtotime(date('Y-m-d h:i:s', strtotime($reservation->eventdate)));
+                    $deadline = strtotime('-15 days', $deadline);
+                    $deadline = date('Y-m-d h:i:s', $deadline);
+                    $sd = false;
+                }
+            }
+        }
     }
 }
