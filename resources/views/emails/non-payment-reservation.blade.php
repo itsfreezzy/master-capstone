@@ -2,7 +2,7 @@
 # Cancellation of Reservation
 
 Dear Client {{ $customer->name }},
-Your reservation "{{ $reservation->eventtitle }}" has been cancelled because you failed to pay the corresponding 50% Downpayment.
+Your reservation "{{ $reservation->eventtitle }}" has been cancelled because you failed to pay the Reservation Fee of PhP 5,000.00.
 
 Thanks,<br>
 {{ config('app.name') }}

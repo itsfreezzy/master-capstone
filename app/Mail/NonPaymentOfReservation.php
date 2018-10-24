@@ -8,7 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Reservation, App\Customer;
 
-class NonPaymentOfDP extends Mailable
+class NonPaymentOfReservation extends Mailable
 {
     use Queueable, SerializesModels;
     public $reservation, $customer;
@@ -31,6 +31,6 @@ class NonPaymentOfDP extends Mailable
      */
     public function build()
     {
-        return $this->markdown('emails.non-payment-dp');
+        return $this->subject('Non-payment of Reservation Fee for ' . $this->reservation->eventtitle)->markdown('emails.non-payment-reservation');
     }
 }
