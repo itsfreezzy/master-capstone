@@ -1225,7 +1225,7 @@ class ClientController extends Controller
             'EventOrganizer' => 'required|string|regex:/^[\pL\s]+$/u',
             'EventOrganizerContactNo' => 'required|digits:11',
             'EventOrganizerEmail' => 'required|email',
-            'EventDate' => 'required|after:+3 months|',
+            'EventDate' => 'required|after_or_equal:+3 months|',
             // 'EventDate' => 'required|',
             'EventTitle' => 'required|unique:tblreservations,eventtitle',
             'PrefFuncRooms' => 'required|',

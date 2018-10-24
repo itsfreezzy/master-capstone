@@ -19,7 +19,7 @@
             <div class="form-group">
                 <label for="EventDate" class="control-label col-sm-2">Date of Event:*</label>
                 <div class="col-sm-10">
-                    <input style="width: 93%" type="date" name="EventDate" id="EventDate" class="form-control form-horizontal" value="{{ old('EventDate') }}" >
+                    <input style="width: 93%" type="date" name="EventDate" id="EventDate" class="form-control form-horizontal" value="{{ old('EventDate') ? old('EventDate') : date('Y-m-d', strtotime('+1 day', strtotime(date('Y-m-d', strtotime('+3 months', strtotime(date('Y-m-d'))))))) }}" min="{{ date('Y-m-d', strtotime('+1 day', strtotime(date('Y-m-d', strtotime('+3 months', strtotime(date('Y-m-d'))))))) }}" required>
                 </div>
 
                 @if ($errors->has('EventDate'))
@@ -37,7 +37,7 @@
             <div class="form-group">
                 <label for="EventTitle" class="control-label col-sm-2">Title of Event:*</label>
                 <div class="col-sm-10">
-                    <input style="width: 93%" type="text" name="EventTitle" id="" class="form-control form-horizontal" value="{{ old('EventTitle') }}" >
+                    <input style="width: 93%" type="text" name="EventTitle" id="" class="form-control form-horizontal" value="{{ old('EventTitle') }}" required>
                 </div>
                 
                 @if ($errors->has('EventTitle'))
@@ -115,7 +115,7 @@
             <div class="form-group">
                 <label for="Caterer" class="control-label col-sm-2">Caterer Name:*</label>
                 <div class="col-sm-10">
-                    <select name="CatererName" id="CatererName" style="width: 93%" class="form-control form-horizontal" >
+                    <select name="CatererName" id="CatererName" style="width: 93%" class="form-control form-horizontal" required>
                         @foreach ($caterers as $caterer)
                         <option value="{{ $caterer->name }}">{{ $caterer->name }}</option>
                         @endforeach
@@ -147,7 +147,7 @@
             <div class="form-group">
                 <label for="EventNature" class="control-label col-sm-2">Nature of Event:*</label>
                 <div class="col-sm-9">
-                    <select name="EventNature[]" id="EventNature" class="form-control form-horizontal" multiple style="width: 100%" >
+                    <select name="EventNature[]" id="EventNature" class="form-control form-horizontal" multiple style="width: 100%" required>
                         {{-- <option value="">-- SELECT --</option> --}}
                         @foreach ($eventnatures as $eventnature)
                         <option value="{{ $eventnature->nature }}">{{ $eventnature->nature }}</option>
@@ -171,7 +171,7 @@
                 {{--  <label for="EventTitle" class="control-label col-sm-2">Number of Attendees:*</label>  --}}
                 <p class="control-label col-sm-2">Number of Attendees:*</p>
                 <div class="col-sm-10">
-                    <input style="width: 20%" type="number" name="NumAttendees" id="NumAttendees" class="form-control form-horizontal" min="1" max="999" value="{{ old('NumAttendees') }}" >
+                    <input style="width: 20%" type="number" name="NumAttendees" id="NumAttendees" class="form-control form-horizontal" min="1" max="999" value="{{ old('NumAttendees') }}" required>
                 </div>
 
                 @if ($errors->has('NumAttendees'))
@@ -190,12 +190,12 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Start Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="TimeStart" id="timestart" class="form-control form-horizontal" value="{{ old('TimeStart') }}" >
+                        <input style="" type="time" name="TimeStart" id="timestart" class="form-control form-horizontal" value="{{ old('TimeStart') }}" required>
                     </div>
 
                     <p class="control-label col-sm-2">End Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="TimeEnd" id="timeend" class="form-control form-horizontal" value="{{ old('TimeEnd') }}" >
+                        <input style="" type="time" name="TimeEnd" id="timeend" class="form-control form-horizontal" value="{{ old('TimeEnd') }}" required>
                     </div>
                 </div>
                 
@@ -224,12 +224,12 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Ingress Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="IngressTime" id="" class="form-control form-horizontal" value="{{ old('IngressTime') }}" >
+                        <input style="" type="time" name="IngressTime" id="" class="form-control form-horizontal" value="{{ old('IngressTime') }}" required>
                     </div>
 
                     <p class="control-label col-sm-2">Eggress Time:*</p>
                     <div class="col-sm-2">
-                        <input style="" type="time" name="EggressTime" id="" class="form-control form-horizontal" value="{{ old('EggressTime') }}" >
+                        <input style="" type="time" name="EggressTime" id="" class="form-control form-horizontal" value="{{ old('EggressTime') }}" required>
                     </div>
                 </div>
 
@@ -291,7 +291,7 @@
             <div class="form-group">
                 <label for="SetupType" class="control-label col-sm-2">Physical Set-up:*</label>
                 <div class="col-sm-8">
-                    <select name="EventSetup" id="EventSetup" class="form-control form-horizontal" style="width: 100%" >
+                    <select name="EventSetup" id="EventSetup" class="form-control form-horizontal" style="width: 100%" required>
                         @foreach ($eventsetups as $eventsetup)
                         <option value="{{ $eventsetup->setup }}">{{ $eventsetup->setup }}</option>
                         @endforeach
@@ -349,7 +349,7 @@
             <div class="form-group">
                 <label class="control-label col-sm-2">Event Organizer:*</label>
                 <div class="col-sm-10" >
-                    <input style="width:93%;" type="text" name="EventOrganizer" id="" class="form-control form-horizontal" value="{{ old('EventOrganizer') }}" >
+                    <input style="width:93%;" type="text" name="EventOrganizer" id="" class="form-control form-horizontal" value="{{ old('EventOrganizer') }}" required>
                 </div>
 
                 @if ($errors->has('EventOrganizer'))
@@ -367,7 +367,7 @@
             <div class="form-group">
                 <label class="control-label col-sm-2">Contact No:*</label>
                 <div class="col-sm-10" >
-                    <input style="width:93%;" type="text" name="EventOrganizerContactNo" id="" class="form-control form-horizontal" value="{{ old('EventOrganizerContactNo') }}" >
+                    <input style="width:93%;" type="text" name="EventOrganizerContactNo" id="" class="form-control form-horizontal" value="{{ old('EventOrganizerContactNo') }}" required>
                 </div>
 
                 @if ($errors->has('EventOrganizerContactNo'))
@@ -385,7 +385,7 @@
             <div class="form-group">
                 <label class="control-label col-sm-2">Email:*</label>
                 <div class="col-sm-10" >
-                    <input style="width:93%;" type="text" name="EventOrganizerEmail" id="" class="form-control form-horizontal" value="{{ old('EventOrganizerEmail') }}" >
+                    <input style="width:93%;" type="text" name="EventOrganizerEmail" id="" class="form-control form-horizontal" value="{{ old('EventOrganizerEmail') }}" required>
                 </div>
 
                 @if ($errors->has('EventOrganizerEmail'))
@@ -413,7 +413,7 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Primary Contact:*</p>
                     <div class="col-sm-4">
-                        <input type="text" name="primcontactinfo[name]" id="" class="form-control form-horizontal" value="{{ old('primcontactinfo[name]') }}" >
+                        <input type="text" name="primcontactinfo[name]" id="" class="form-control form-horizontal" value="{{ old('primcontactinfo[name]') }}" required>
                     </div>
 
                     <p class="control-label col-sm-2">Secondary Contact:</p>
@@ -481,7 +481,7 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Mobile Number:*</p>
                     <div class="col-sm-4">
-                        <input type="text" name="primcontactinfo[mobno]" id="" class="form-control form-horizontal" >
+                        <input type="text" name="primcontactinfo[mobno]" id="" class="form-control form-horizontal" required>
                     </div>
 
                     <p class="control-label col-sm-2">Mobile Number:</p>
@@ -515,7 +515,7 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Email:*</p>
                     <div class="col-sm-4">
-                        <input type="text" name="primcontactinfo[email]" id="" class="form-control form-horizontal" >
+                        <input type="text" name="primcontactinfo[email]" id="" class="form-control form-horizontal" required>
                     </div>
 
                     <p class="control-label col-sm-2">Email:</p>
@@ -549,7 +549,7 @@
                 <div class="row">
                     <p class="control-label col-sm-2" style="margin-left: 1%">Home/Company Address:*</p>
                     <div class="col-sm-4">
-                        <input type="text" name="primcontactinfo[address]" id="" class="form-control form-horizontal" >
+                        <input type="text" name="primcontactinfo[address]" id="" class="form-control form-horizontal" required>
                     </div>
                     
                     <p class="control-label col-sm-2">Home/Company Address:</p>
