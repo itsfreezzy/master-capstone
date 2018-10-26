@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
 
-    <title>Cancelled Reservations Report</title>
+    <title>Reservation Statistics</title>
 
     <style>
         .table>thead>tr>th{
@@ -18,38 +18,47 @@
     <div class="container">
         <header>
             <h2 class="text-center"><strong>UNILAB Bayanihan Center</strong></h2>
-            <h2 class="text-center" style="margin-bottom: 0px; padding-botton: 0px"><strong>Cancelled Reservations Report</strong></h2><br>
-            <h4 class="text-center" style="margin-top: 0px; padding-top:0px"><strong>{{ date('F d, Y h:i:sA', strtotime($date[0])) }} - {{ date('F d, Y h:i:sA', strtotime($date[1])) }}</strong></h4><br>
+            <h2 class="text-center" style="margin-bottom: 0px; padding-botton: 0px"><strong>Reservation Statistics</strong></h2><br>
+            <h4 class="text-center" style="margin-top: 0px; padding-top:0px"><strong>{{ date('F d, Y', strtotime($date[0])) }} - {{ date('F d, Y', strtotime($date[1])) }}</strong></h4><br>
         </header>
 
         <div class="content">
             <div class="row">
-                <table class="table table-stripped table-bordered">
+                Reservations Filed within the Date Rage       = {{ count($filedreservations) }} <br>
+                Reservations Cancelled within the Date Range = {{ count($cancelledreservations) }} <br>
+                Reservations where Event Date is within the Date Range = {{ count($resfordate) }} <br>
+                Reservations where Event Date is within the Date Range and status is Pending = {{ count($pending) }} <br>
+                Reservations where Event Date is within the Date Range and status is Confirmed = {{ count($confirmed) }} <br>
+                Reservations where Event Date is within the Date Range and status is Done = {{ count($done) }} <br>
+                Reservations where Event Date is within the Date Range and status is Cancelled = {{ count($cancelled) }} <br>
+            </div>
+            <div class="row">
+                {{-- <table class="table table-stripped table-bordered">
                     <thead>
                         <th class="col-xs-1">Reservation Code</th>
                         <th class="col-xs-2">Event Title</th>
                         <th>Filed By</th>
-                        <th>Date Cancelled</th>
-                        <th>Reason for Cancellation</th>
+                        <th>Date Filed</th>
+                        <th>Event Date</th>
                         <th>Reservation Total</th>
                     </thead>
                     <tbody>
-                        @foreach ($cancelledreservations as $pr)
+                        @foreach ($donereservations as $pr)
                         <tr>
                             <th class="text-center">{{ $pr->code }}</th>
                             <th class="text-center">{{ $pr->eventtitle }}</th>
                             <th class="text-center">{{ $pr->name }}</th>
-                            <th class="text-center">{{ date('F d Y, h:i:sA', strtotime($pr->deleted_at)) }}</th>
-                            <th class="text-center">{{ $pr->cancelGrounds }}</th>
+                            <th class="text-center">{{ date('F d Y, h:i:sA', strtotime($pr->created_at)) }}</th>
+                            <th class="text-center">{{ date('F d Y', strtotime($pr->eventdate)) }}</th>
                             <th class="text-center">PhP {{ number_format($pr->total, 2) }}</th>
                         </tr>
                         @endforeach
                         <tr>
-                            <th colspan='4'><h4><strong>Total Amount for all Cancelled Reservations</strong></h4></th>
-                            <th colspan="2" class="text-center"><h4><strong>PhP {{ number_format($total, 2) }}</strong></h4></th>
+                            <th colspan='4'><h3><strong>Total Amount for all Done Reservations</strong></h3></th>
+                            <th colspan="2" class="text-center"><h3><strong>PhP {{ number_format($total, 2) }}</strong></h3></th>
                         </tr>
                     </tbody>
-                </table>
+                </table> --}}
             </div>
         </div>
 

@@ -493,7 +493,7 @@ class ReportController extends Controller
                             ->join('tblreservationinfo', 'tblreservations.reservationinfoid', '=', 'tblreservationinfo.id')
                             ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
                             ->select(DB::raw('tblreservations.code, tblreservations.eventtitle, tblcustomers.name, tblreservations.datefiled, tblreservations.status, tblreservations.eventdate, tblreservationinfo.timestart, tblreservationinfo.timeend'))
-                            ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                            ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)
                             ->orderBy('tblreservations.created_at', 'desc')
                             ->get();
         
@@ -513,7 +513,7 @@ class ReportController extends Controller
                         ->join('tblreservations', 'tblreservations.code', '=', 'tblpayments.reservationcode')
                         ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
                         ->select(DB::raw('tblpayments.*, tblreservations.eventtitle, tblcustomers.name, tblreservations.total as totalbal'))
-                        ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                        ->whereRaw('tblpayments.created_at >= ? AND tblpayments.created_at <= ?', $date)
                         ->orderBy('tblreservations.code', 'asc')
                         ->orderBy('tblpayments.created_at', 'desc')
                         ->get();
@@ -532,7 +532,7 @@ class ReportController extends Controller
                         ->join('tblreservations', 'tblreservations.customercode', '=', 'tblcustomers.code')
                         ->join('tblpayments', 'tblreservations.code', '=', 'tblpayments.reservationcode')
                         ->select(DB::raw('tblcustomers.code, tblcustomers.name, tblreservations.eventtitle, tblreservations.balance'))
-                        ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                        ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)
                         ->where('balance', '>', '0')
                         ->orderBy('tblcustomers.code', 'asc')
                         ->orderBy('tblreservations.code', 'asc')
@@ -570,7 +570,8 @@ class ReportController extends Controller
 
         $pendingreservations = Reservation::where('status', 'Pending')
                         ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
-                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                        ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
         
         $total = 0;
         
@@ -589,7 +590,8 @@ class ReportController extends Controller
 
         $confirmedreservations = Reservation::where('status', 'Confirmed')
                         ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
-                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                        ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
         
         $total = 0;
         $totalbalance = 0;
@@ -610,7 +612,8 @@ class ReportController extends Controller
 
         $donereservations = Reservation::where('status', 'Done')
                         ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
-                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                        ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
         
         $total = 0;
 
@@ -627,9 +630,10 @@ class ReportController extends Controller
         $date[0] = $date[0] . ' 00:00:00';
         $date[1] = $date[1] . ' 23:59:59';
 
-        $cancelledreservations = Reservation::withTrashed()->where('status', 'Cancelled')
+        $cancelledreservations = Reservation::onlyTrashed()->where('status', 'Cancelled')
                         ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
-                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))->get();
+                        ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                        ->whereRaw('tblreservations.deleted_at >= ? AND tblreservations.deleted_at <= ?', $date)->get();
         
         $total = 0;
 
@@ -639,6 +643,56 @@ class ReportController extends Controller
 
         $pdf = PDF::loadView('forms.cancelled-res', compact('cancelledreservations', 'date', 'total'));
         return $pdf->stream('cancelledres' . $date[0] . ' - ' . $date[1] . '.pdf');
+    }
+
+    public function generateReservationStatistics(Request $request) {
+        $date = explode('|', $request->daterange);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        // total number of reservations wherein the event date is in the specified date range
+        $resfordate = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations done for the specified date range
+        $done = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Done')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations cancelled for the specified date range
+        $cancelled = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Cancelled')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+
+        // reservations pending for the specified date range
+        $pending = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Pending')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations confirmed for the specified date range
+        $confirmed = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Confirmed')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations filed at the specified date range
+        $filedreservations = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date);
+        
+        // reservations cancelled at the specified date range
+        $cancelledreservations = Reservation::onlyTrashed()->where('status', 'Cancelled')
+                    ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->whereRaw('tblreservations.deleted_at >= ? AND tblreservations.deleted_at <= ?', $date)->get();
+
+        // dd();
+        $pdf = PDF::loadView('forms.res-stats', compact('reservations', 'date'));
+        return $pdf->stream('stats ' . $date[0] . ' - ' . $date[1] . '.pdf');
     }
 
     function random_color_part() {

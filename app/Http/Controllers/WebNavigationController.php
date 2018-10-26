@@ -277,6 +277,71 @@ class WebNavigationController extends Controller
 
     
     public function test() {
-        dd(date('Y-m-d', strtotime('+1 day', strtotime(date('Y-m-d', strtotime('+3 months', strtotime(date('Y-m-d'))))))));
+        $date = '2018-01-01|2018-12-31';
+        $date = explode('|', $date);
+        $date[0] = $date[0] . ' 00:00:00';
+        $date[1] = $date[1] . ' 23:59:59';
+
+        // most selected function rooms of reservations wherein event date is in the specified date range
+        $rooms = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->join('tbleventvenue', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
+                    ->select(DB::raw('tbleventvenue.venuecode, count(tbleventvenue.venuecode) as count'))
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)
+                    ->groupBy('tbleventvenue.venuecode')
+                    ->orderBy('count', 'desc')->get();
+
+        // total number of reservations wherein the event date is in the specified date range
+        $resfordate = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations done for the specified date range
+        $done = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Done')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations cancelled for the specified date range
+        $cancelled = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Cancelled')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+
+        // reservations pending for the specified date range
+        $pending = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Pending')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations confirmed for the specified date range
+        $confirmed = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->where('tblreservations.status', 'Confirmed')
+                    ->whereRaw('tblreservations.eventdate >= ? AND tblreservations.eventdate <= ?', $date)->get();
+        
+        // reservations filed at the specified date range
+        $filedreservations = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)->get();
+        
+        // most selected function rooms of reservations filed at the specified date range
+        $filedresrooms = Reservation::join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->join('tbleventvenue', 'tblreservations.code', '=', 'tbleventvenue.reservationcode')
+                    ->select(DB::raw('tbleventvenue.venuecode, count(tbleventvenue.venuecode) as count'))
+                    ->whereRaw('tblreservations.created_at >= ? AND tblreservations.created_at <= ?', $date)
+                    ->groupBy('tbleventvenue.venuecode')
+                    ->orderBy('count', 'desc')->get();
+        
+        // balances collection due dates
+        
+        // reservations cancelled at the specified date range
+        $cancelledreservations = Reservation::onlyTrashed()->where('status', 'Cancelled')
+                    ->join('tblcustomers', 'tblreservations.customercode', '=', 'tblcustomers.code')
+                    ->select(DB::raw('tblreservations.*, tblcustomers.name'))
+                    ->whereRaw('tblreservations.deleted_at >= ? AND tblreservations.deleted_at <= ?', $date)->get();
+
+        // dd();
+        $pdf = PDF::loadView('forms.res-stats', compact('resfordate', 'filedreservations', 'cancelledreservations', 'date', 'cancelled', 'pending', 'confirmed', 'done'));
+        return $pdf->stream('stats ' . $date[0] . ' - ' . $date[1] . '.pdf');
     }
 }
