@@ -81,21 +81,6 @@ UNILAB Bayanihan Center
         These Function Rooms are complemented by spacious lobbies in both the main and annex facility, powerful air-conditioning units, built-in sound and lighting system, and ample, secured parking spaces. <br><br>
 
         With the increasing trend of its bookings, truly, the Bayanihan Center is gradually becoming the preferred events and meetings venue in this part of the city.
-
-        <li><div class="fb-share-button" data-href="https://unilab-bayanihancenter.herokuapp.com/" data-layout="button_count"></div></li>
-        <li><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></li>
-        <li><div class="g-plus" data-action="share" ></div></li>
     </p>
 </div>
-<script src="https://apis.google.com/js/platform.js" async defer></script>
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) return;
-  js = d.createElement(s); js.id = id;
-  js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v3.0";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));
-
-</script>
-
 @endsection
