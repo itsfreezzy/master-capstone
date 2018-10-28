@@ -83,6 +83,9 @@
 
 
             <li class="header"><b>UTILITIES</b></li>
+            <li>
+                <a href="https://drive.google.com/drive/folders/1BL_oSq6gMtVAVTeiZDcQS0U_m9DhgfHD?usp=sharing" target="_blank"><i class="fa fa-question"></i> <span>Download User Manual</span></a>
+            </li>
             <li {{ (Request::is('admin/utilities/users') ? 'class=active' : '') }}>
                 <a href="/admin/utilities/users"><i class="fa fa-users"></i> <span>Users</span></a>
             </li>
