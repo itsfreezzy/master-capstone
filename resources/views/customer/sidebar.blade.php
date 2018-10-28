@@ -20,10 +20,10 @@
             <li {{ (Request::is('customer/balances') ? 'class=active' : '') }}>
                 <a href="/customer/balances"><i class="fa fa-balance-scale"></i> <span>Balance</span></a>
             </li>
-            <li class="header">MISC.</li>
+            {{-- <li class="header">MISC.</li>
             <li>
                 <a href="https://drive.google.com/drive/folders/1BL_oSq6gMtVAVTeiZDcQS0U_m9DhgfHD?usp=sharing" target="_blank"><i class="fa fa-question"></i> <span>Download User Manual</span></a>
-            </li>
+            </li> --}}
 
             {{-- <li class="header"><b>SETTINGS</b></li>
             <li {{ (Request::is('customer/settings') ? 'class=active' : '') }}>
